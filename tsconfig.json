@@ -8,8 +8,11 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client"],
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "types": ["vite/client", "youtube" ],
     "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
   }
 }

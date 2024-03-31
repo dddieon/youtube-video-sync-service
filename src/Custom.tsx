@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, onMount } from 'solid-js';
+import { createSignal, onMount } from 'solid-js';
 
 function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
@@ -17,16 +17,19 @@ function YoutubePlayer() {
       }, timeGap() * 1000); // timeGap 값을 초단위로 변경하여 두 번째 동영상을 재생합니다.
     };
 
-    const onPlayerStateChange1 = (event) => {
+    const onPlayerStateChange1 = (event: { data: YT.PlayerState }) => {
       if (event.data === window.YT.PlayerState.PLAYING) {
         const currentTime1 = player1().getCurrentTime();
 
-        const seekTime = currentTime1 - (timeGap());
+        const seekTime = currentTime1 - timeGap();
         if (seekTime < 0) {
-          setTimeout(() => {
-            player2().seekTo(0);
-            player2().playVideo();
-          }, Math.abs(seekTime) * 1000);
+          setTimeout(
+            () => {
+              player2().seekTo(0);
+              player2().playVideo();
+            },
+            Math.abs(seekTime) * 1000,
+          );
         } else {
           player2().seekTo(seekTime);
         }
@@ -36,8 +39,11 @@ function YoutubePlayer() {
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    if (firstScriptTag.parentNode) {
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
 
+    // @ts-ignore
     window.onYouTubeIframeAPIReady = () => {
       setPlayer1(
         new window.YT.Player('youtube-player-1', {
@@ -61,31 +67,24 @@ function YoutubePlayer() {
       );
     };
   });
-
-  onCleanup(() => {
-    // 컴포넌트가 언마운트될 때 실행되는 코드
-    // 필요한 경우 플레이어를 정리(clean up)할 수 있습니다.
-  });
-
   return (
     <div>
-      <h1>
-        YouTube Video Sync Service
-      </h1>
-      <div style={{ 'margin': '40px 0' }}>
+      <h1>YouTube Video Sync Service</h1>
+      <div style={{ margin: '40px 0' }}>
         <label>
           <b style={{ margin: '4px' }}>Insert gap : </b>
           <input
             style={{ width: '80px' }}
-            type='number'
-            step='0.01' // 0.1 단위로 값을 조정할 수 있도록 설정합니다.
+            type="number"
+            step="0.01" // 0.1 단위로 값을 조정할 수 있도록 설정합니다.
             value={timeGap()} // timeGap 상태를 input의 값으로 설정합니다.
             onInput={(e) => setTimeGap(parseFloat(e.target.value))} // input 값이 변경될 때 timeGap 상태를 업데이트합니다.
-          />s
+          />
+          s
         </label>
       </div>
-      <div id='youtube-player-1' />
-      <div id='youtube-player-2' />
+      <div id="youtube-player-1" />
+      <div id="youtube-player-2" />
     </div>
   );
 }
