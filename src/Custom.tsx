@@ -1,38 +1,52 @@
 import { createSignal, onMount } from 'solid-js';
 
 function YoutubePlayer() {
-  const [player1, setPlayer1] = createSignal<any>(null);
-  const [player2, setPlayer2] = createSignal<any>(null);
-  const [timeGap, setTimeGap] = createSignal<number>(5.08);
+  const [player1, setPlayer1] = createSignal(null);
+  const [player2, setPlayer2] = createSignal(null);
+  const [timeGap, setTimeGap] = createSignal(5);
+  const [videoId1, setVideoId1] = createSignal('F4IKWKH9oyg');
+  const [videoId2, setVideoId2] = createSignal('5jsdarfpsLk');
 
   onMount(() => {
     const onPlayerReady1 = () => {
-      player1().loadVideoById('F4IKWKH9oyg'); // 첫 번째 동영상의 ID
+      player1().loadVideoById(videoId1());
     };
 
     const onPlayerReady2 = () => {
-      setTimeout(() => {
-        player2().loadVideoById('5jsdarfpsLk'); // 두 번째 동영상의 ID
-        player2().playVideo();
-      }, timeGap() * 1000); // timeGap 값을 초단위로 변경하여 두 번째 동영상을 재생합니다.
+      player2().loadVideoById(videoId2());
+    };
+    // 기존 코드
+    const [isSyncing, setIsSyncing] = createSignal(false); // 동기화 중 상태를 추적하는 변수 추가
+
+    const syncPlayers = (sourcePlayer, targetPlayer, timeDiff) => {
+      setIsSyncing(true); // 동기화 시작 시 플래그 설정
+      const currentTime = sourcePlayer.getCurrentTime();
+      const seekTime = currentTime + timeDiff;
+
+      if (seekTime < 0) {
+        setTimeout(
+          () => {
+            targetPlayer.seekTo(0);
+            targetPlayer.playVideo();
+          },
+          Math.abs(seekTime) * 1000,
+        );
+      } else {
+        targetPlayer.seekTo(seekTime);
+        targetPlayer.playVideo();
+      }
+      setTimeout(() => setIsSyncing(false), 1000); // 동기화 완료 후 충분한 시간을 두고 플래그 해제
     };
 
-    const onPlayerStateChange1 = (event: { data: YT.PlayerState }) => {
-      if (event.data === window.YT.PlayerState.PLAYING) {
-        const currentTime1 = player1().getCurrentTime();
+    const onPlayerStateChange = (event) => {
+      if (event.data === window.YT.PlayerState.PLAYING && !isSyncing()) {
+        syncPlayers(player1(), player2(), -timeGap());
+      }
+    };
 
-        const seekTime = currentTime1 - timeGap();
-        if (seekTime < 0) {
-          setTimeout(
-            () => {
-              player2().seekTo(0);
-              player2().playVideo();
-            },
-            Math.abs(seekTime) * 1000,
-          );
-        } else {
-          player2().seekTo(seekTime);
-        }
+    const onPlayerStateChange2 = (event) => {
+      if (event.data === window.YT.PlayerState.PLAYING && !isSyncing()) {
+        syncPlayers(player2(), player1(), timeGap() + 0.25);
       }
     };
 
@@ -43,7 +57,6 @@ function YoutubePlayer() {
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     }
 
-    // @ts-ignore
     window.onYouTubeIframeAPIReady = () => {
       setPlayer1(
         new window.YT.Player('youtube-player-1', {
@@ -51,7 +64,7 @@ function YoutubePlayer() {
           width: '560',
           events: {
             onReady: onPlayerReady1,
-            onStateChange: onPlayerStateChange1,
+            onStateChange: onPlayerStateChange,
           },
         }),
       );
@@ -62,26 +75,51 @@ function YoutubePlayer() {
           width: '560',
           events: {
             onReady: onPlayerReady2,
+            onStateChange: onPlayerStateChange2,
           },
         }),
       );
     };
   });
+
+  const updateVideoId1 = (newId: string) => {
+    setVideoId1(newId);
+    player1()?.loadVideoById(newId);
+  };
+
+  const updateVideoId2 = (newId: string) => {
+    setVideoId2(newId);
+    player2()?.loadVideoById(newId);
+  };
+
   return (
     <div>
       <h1>YouTube Video Sync Service</h1>
-      <div style={{ margin: '40px 0' }}>
-        <label>
-          <b style={{ margin: '4px' }}>Insert gap : </b>
-          <input
-            style={{ width: '80px' }}
-            type="number"
-            step="0.01" // 0.1 단위로 값을 조정할 수 있도록 설정합니다.
-            value={timeGap()} // timeGap 상태를 input의 값으로 설정합니다.
-            onInput={(e) => setTimeGap(parseFloat(e.target.value))} // input 값이 변경될 때 timeGap 상태를 업데이트합니다.
-          />
-          s
-        </label>
+      <label>
+        <b style={{ margin: '4px' }}>Insert gap : </b>
+        <input
+          style={{ width: '80px' }}
+          type="number"
+          step="0.01"
+          value={timeGap()}
+          onInput={(e) => setTimeGap(parseFloat(e.target.value))}
+        />
+      </label>
+      <div>
+        <input
+          type="text"
+          placeholder="첫 번째 비디오 ID"
+          onInput={(e) => updateVideoId1(e.target.value)}
+        />
+        <button onClick={() => updateVideoId1(videoId1())}>Update Video 1</button>
+      </div>
+      <div>
+        <input
+          type="text"
+          placeholder="두 번째 비디오 ID"
+          onInput={(e) => updateVideoId2(e.target.value)}
+        />
+        <button onClick={() => updateVideoId2(videoId2())}>Update Video 2</button>
       </div>
       <div id="youtube-player-1" />
       <div id="youtube-player-2" />
