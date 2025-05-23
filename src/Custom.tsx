@@ -1,4 +1,5 @@
 import { createSignal, onMount, For } from 'solid-js';
+import './reset.css';
 import './Custom.css';
 import Slider from './components/Slider';
 
@@ -25,6 +26,35 @@ declare global {
     onYouTubeIframeAPIReady?: () => void;
   }
 }
+
+// SVG 아이콘 정의
+const MonitorIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="#357abd" stroke-width="1.7" viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8" />
+  </svg>
+);
+const VolumeIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="#357abd" stroke-width="1.7" viewBox="0 0 24 24">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+  </svg>
+);
+const FullscreenIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="1.7" viewBox="0 0 24 24">
+    <polyline points="4 4 9 4 9 9" />
+    <polyline points="20 4 15 4 15 9" />
+    <polyline points="4 20 9 20 9 15" />
+    <polyline points="20 20 15 20 15 15" />
+  </svg>
+);
+const SettingsIcon = () => (
+  <svg width="22" height="22" fill="none" stroke="#357abd" stroke-width="1.7" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 11 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
 
 function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
@@ -252,100 +282,168 @@ function YoutubePlayer() {
     setTimeout(() => setIsSyncing(false), 1000);
   };
 
+  // 전체화면 핸들러: 화면용 영상(main-video) 전체화면
+  function handleFullscreen() {
+    const el = document.getElementById('youtube-player-1');
+    if (el && el.requestFullscreen) {
+      el.requestFullscreen();
+    } else if (el && (el as any).webkitRequestFullscreen) {
+      (el as any).webkitRequestFullscreen();
+    }
+  }
+
+  function handleSaveBtnClick() {
+    if (!videoId1() || !videoId2()) {
+      alert('화면용과 소리용 영상 ID를 모두 입력해주세요.');
+      return;
+    }
+    const name = window.prompt('설정 이름을 입력하세요');
+    if (name && name.trim() !== '') {
+      setSettingName(name.trim());
+      saveSettings();
+    }
+  }
+
   return (
     <div class="app-container">
       <div class="sidebar">
-        <h2>저장된 설정</h2>
-        <div class="settings-list">
-          <For each={[EXAMPLE_SETTING, ...savedSettings()]}>
-            {(setting) => (
-              <div class="setting-item">
-                <div
-                  class="setting-info"
-                  onClick={async () => {
-                    setVideoId1(setting.videoId1 || '');
-                    setVideoId2(setting.videoId2 || '');
-                    setTimeGap(setting.timeGap);
-                    await safeCreateOrUpdatePlayer1(setting.videoId1 || '');
-                    await safeCreateOrUpdatePlayer2(setting.videoId2 || '');
-                  }}
-                >
-                  <div class="setting-name">{setting.name}</div>
-                  <div class="setting-details">
-                    {setting.id === 'example' ? (
-                      <>
-                        <span>화면용: {setting.videoId1}</span>
-                        <span>소리용: {setting.videoId2}</span>
-                      </>
-                    ) : (
-                      <span>ID: {setting.videoId1 ?? ''}</span>
-                    )}
-                    <span>간격: {setting.timeGap}초</span>
+        <h2>
+          <span class="icon">
+            <SettingsIcon />
+          </span>
+          저장된 설정
+        </h2>
+        <div style={{ flex: 1 }}>
+          <div class="settings-list">
+            <For each={[EXAMPLE_SETTING, ...savedSettings()]}>
+              {(setting) => (
+                <div class="setting-item">
+                  <div
+                    class="setting-info"
+                    onClick={async () => {
+                      setVideoId1(setting.videoId1 || '');
+                      setVideoId2(setting.videoId2 || '');
+                      setTimeGap(setting.timeGap);
+                      await safeCreateOrUpdatePlayer1(setting.videoId1 || '');
+                      await safeCreateOrUpdatePlayer2(setting.videoId2 || '');
+                    }}
+                  >
+                    <div class="setting-name">{setting.name}</div>
+                    <div class="setting-details">
+                      {setting.id === 'example' ? (
+                        <>
+                          <span>화면용: {setting.videoId1}</span>
+                          <span>소리용: {setting.videoId2}</span>
+                        </>
+                      ) : (
+                        <span>ID: {setting.videoId1 ?? ''}</span>
+                      )}
+                      <span>간격: {setting.timeGap}초</span>
+                    </div>
                   </div>
+                  {setting.id !== 'example' && (
+                    <button class="delete-btn" onClick={() => deleteSetting(setting.id)}>
+                      삭제
+                    </button>
+                  )}
                 </div>
-                {setting.id !== 'example' && (
-                  <button class="delete-btn" onClick={() => deleteSetting(setting.id)}>
-                    삭제
-                  </button>
-                )}
-              </div>
-            )}
-          </For>
+              )}
+            </For>
+          </div>
+          <button class="save-btn" onClick={handleSaveBtnClick}>
+            현재 설정 저장
+          </button>
         </div>
       </div>
 
       <div class="main-content">
-        <h1 class="title">기타 연주 동기화 서비스</h1>
+        <h1 class="title">
+          <span class="icon">
+            <SettingsIcon />
+          </span>
+          기타 연주 동기화 서비스
+        </h1>
+        <div class="video-layout">
+          <div class="main-video-area">
+            <div class="main-video-block">
+              <div class="video-label">
+                <span class="icon">
+                  <MonitorIcon />
+                </span>
+                화면용 영상
+              </div>
+              {videoId1() === '' ? (
+                <div class="video-skeleton">화면용 영상 링크 필요</div>
+              ) : video1Error() ? (
+                <div class="video-skeleton error">{video1Error()}</div>
+              ) : (
+                <div id="youtube-player-1" class="main-video" />
+              )}
+              <button
+                class="fullscreen-btn"
+                onClick={handleFullscreen}
+                disabled={!videoId1() || !!video1Error()}
+              >
+                <span class="icon">
+                  <FullscreenIcon />
+                </span>
+                전체화면으로
+              </button>
+            </div>
+            <div class="sub-video-area">
+              <div class="video-label">
+                <span class="icon">
+                  <VolumeIcon />
+                </span>
+                소리용 영상
+              </div>
+              {videoId2() === '' ? (
+                <div class="video-skeleton">소리용 영상 링크 필요</div>
+              ) : video2Error() ? (
+                <div class="video-skeleton error">{video2Error()}</div>
+              ) : (
+                <div id="youtube-player-2" class="sub-video" />
+              )}
+            </div>
+          </div>
+        </div>
 
         <div class="settings-panel">
-          <div class="setting-group">
-            <label class="setting-label">
-              <span>설정 이름:</span>
-              <div class="input-group">
-                <input
-                  type="text"
-                  placeholder="설정 이름을 입력하세요"
-                  value={settingName()}
-                  onInput={(e) => setSettingName(e.target.value)}
-                />
-              </div>
-            </label>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">
-              <span>화면용 영상 ID:</span>
-              <div class="input-group">
-                <input
-                  type="text"
-                  placeholder="화면용 영상 ID를 입력하세요"
-                  value={videoId1()}
-                  onInput={async (e) => {
-                    const newId = e.currentTarget.value;
-                    setVideoId1(newId);
-                    await safeCreateOrUpdatePlayer1(newId);
-                  }}
-                />
-              </div>
-            </label>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">
-              <span>소리용 영상 ID:</span>
-              <div class="input-group">
-                <input
-                  type="text"
-                  placeholder="소리용 영상 ID를 입력하세요"
-                  value={videoId2()}
-                  onInput={async (e) => {
-                    const newId = e.currentTarget.value;
-                    setVideoId2(newId);
-                    await safeCreateOrUpdatePlayer2(newId);
-                  }}
-                />
-              </div>
-            </label>
+          <div class="input-row">
+            <div class="setting-group">
+              <label class="setting-label">
+                화면용 ID
+                <div class="input-group">
+                  <input
+                    type="text"
+                    placeholder="화면용 영상 ID를 입력하세요"
+                    value={videoId1()}
+                    onInput={async (e) => {
+                      const newId = e.currentTarget.value;
+                      setVideoId1(newId);
+                      await safeCreateOrUpdatePlayer1(newId);
+                    }}
+                  />
+                </div>
+              </label>
+            </div>
+            <div class="setting-group">
+              <label class="setting-label">
+                소리용 ID
+                <div class="input-group">
+                  <input
+                    type="text"
+                    placeholder="소리용 영상 ID를 입력하세요"
+                    value={videoId2()}
+                    onInput={async (e) => {
+                      const newId = e.currentTarget.value;
+                      setVideoId2(newId);
+                      await safeCreateOrUpdatePlayer2(newId);
+                    }}
+                  />
+                </div>
+              </label>
+            </div>
           </div>
 
           <div class="setting-group">
@@ -423,33 +521,6 @@ function YoutubePlayer() {
                 소리가 화면보다 느리게 느껴진다면 → 양수 값으로 이동해주세요!
               </div>
             </div>
-          </div>
-
-          <button class="save-btn" onClick={saveSettings}>
-            현재 설정 저장
-          </button>
-        </div>
-
-        <div class="video-container">
-          <div class="video-wrapper">
-            <h3>화면용 영상</h3>
-            {videoId1() === '' ? (
-              <div class="video-skeleton">화면용 영상 링크 필요</div>
-            ) : video1Error() ? (
-              <div class="video-skeleton error">{video1Error()}</div>
-            ) : (
-              <div id="youtube-player-1" />
-            )}
-          </div>
-          <div class="video-wrapper">
-            <h3>소리용 영상</h3>
-            {videoId2() === '' ? (
-              <div class="video-skeleton">소리용 영상 링크 필요</div>
-            ) : video2Error() ? (
-              <div class="video-skeleton error">{video2Error()}</div>
-            ) : (
-              <div id="youtube-player-2" />
-            )}
           </div>
         </div>
       </div>
