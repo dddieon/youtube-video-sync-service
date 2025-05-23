@@ -1,13 +1,14 @@
-import { createSignal, onCleanup, Show } from 'solid-js';
+import { onCleanup, Show } from 'solid-js';
+import styles from './Slider.module.css';
 
 interface SliderProps {
   value: number;
-  onChange: (v: number) => void;
+  onChange: (value: number) => void;
   min?: number;
   max?: number;
   step?: number;
   isEditing: boolean;
-  setIsEditing: (v: boolean) => void;
+  setIsEditing: (value: boolean) => void;
 }
 
 export default function Slider(props: SliderProps) {
@@ -20,11 +21,11 @@ export default function Slider(props: SliderProps) {
   });
 
   return (
-    <div class="slider-container" style={{ position: 'relative' }}>
+    <div class={styles.sliderContainer} style={{ position: 'relative' }}>
       {/* 트랙(전체) */}
-      <div class="slider-track" />
+      <div class={styles.sliderTrack} />
       {/* 중앙 tick(0점) */}
-      <div class="slider-tick" />
+      <div class={styles.sliderTick} />
       {/* 슬라이더 썸(조절 버튼) */}
       <input
         ref={(el) => (sliderInputRef = el)}
@@ -38,11 +39,11 @@ export default function Slider(props: SliderProps) {
           props.setIsEditing(true);
           setTimeout(() => tooltipInputRef?.focus(), 0);
         }}
-        class="slider-range"
+        class={styles.customSlider}
       />
       {/* 썸 위치에 맞춰 트랙 위에 툴팁 */}
       <div
-        class="slider-thumb-value"
+        class={styles.sliderThumbValue}
         style={{
           position: 'absolute',
           left: `calc(${((props.value - (props.min ?? -30)) / ((props.max ?? 30) - (props.min ?? -30))) * 100}% - 10px)`,
