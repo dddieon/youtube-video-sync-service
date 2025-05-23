@@ -27,22 +27,52 @@ declare global {
   }
 }
 
-// SVG 아이콘 정의
+// SVG 아이콘 정의 (디스코드 스타일)
+const iconStroke = 'var(--theme-text)';
+const iconStrokeWidth = 2.2;
+
 const MonitorIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="#357abd" stroke-width="1.7" viewBox="0 0 24 24">
-    <rect x="3" y="4" width="18" height="12" rx="2" />
-    <path d="M8 20h8" />
+  <svg
+    width="20"
+    height="20"
+    fill="none"
+    stroke={iconStroke}
+    stroke-width={iconStrokeWidth}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    viewBox="0 0 24 24"
+  >
+    <rect x="3" y="5" width="18" height="12" rx="3" />
+    <path d="M8 19h8" />
   </svg>
 );
 const VolumeIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="#357abd" stroke-width="1.7" viewBox="0 0 24 24">
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+  <svg
+    width="20"
+    height="20"
+    fill="none"
+    stroke={iconStroke}
+    stroke-width={iconStrokeWidth}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    viewBox="0 0 24 24"
+  >
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="none" />
     <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
     <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
   </svg>
 );
 const FullscreenIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="1.7" viewBox="0 0 24 24">
+  <svg
+    width="20"
+    height="20"
+    fill="none"
+    stroke={iconStroke}
+    stroke-width={iconStrokeWidth}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    viewBox="0 0 24 24"
+  >
     <polyline points="4 4 9 4 9 9" />
     <polyline points="20 4 15 4 15 9" />
     <polyline points="4 20 9 20 9 15" />
@@ -50,7 +80,16 @@ const FullscreenIcon = () => (
   </svg>
 );
 const SettingsIcon = () => (
-  <svg width="22" height="22" fill="none" stroke="#357abd" stroke-width="1.7" viewBox="0 0 24 24">
+  <svg
+    width="22"
+    height="22"
+    fill="none"
+    stroke={iconStroke}
+    stroke-width={iconStrokeWidth}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    viewBox="0 0 24 24"
+  >
     <circle cx="12" cy="12" r="3" />
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 11 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
@@ -307,11 +346,11 @@ function YoutubePlayer() {
   return (
     <div class="app-container">
       <div class="sidebar">
-        <h2>
+        <h2 class="title">
           <span class="icon">
             <SettingsIcon />
           </span>
-          저장된 설정
+          Youtube Syncer
         </h2>
         <div style={{ flex: 1 }}>
           <div class="settings-list">
@@ -357,12 +396,6 @@ function YoutubePlayer() {
       </div>
 
       <div class="main-content">
-        <h1 class="title">
-          <span class="icon">
-            <SettingsIcon />
-          </span>
-          기타 연주 동기화 서비스
-        </h1>
         <div class="video-layout">
           <div class="main-video-area">
             <div class="main-video-block">
@@ -411,53 +444,63 @@ function YoutubePlayer() {
         <div class="settings-panel">
           <div class="input-row">
             <div class="setting-group">
-              <label class="setting-label">
-                화면용 ID
-                <div class="input-group">
-                  <input
-                    type="text"
-                    placeholder="화면용 영상 ID를 입력하세요"
-                    value={videoId1()}
-                    onInput={async (e) => {
-                      const newId = e.currentTarget.value;
-                      setVideoId1(newId);
-                      await safeCreateOrUpdatePlayer1(newId);
-                    }}
-                  />
-                </div>
-              </label>
+              <div class="form-label-row">
+                <span class="form-label">화면용 ID</span>
+              </div>
+              <div class="input-group">
+                <input
+                  type="text"
+                  placeholder="화면용 영상 ID를 입력하세요"
+                  value={videoId1()}
+                  onInput={async (e) => {
+                    const newId = e.currentTarget.value;
+                    setVideoId1(newId);
+                    await safeCreateOrUpdatePlayer1(newId);
+                  }}
+                />
+              </div>
             </div>
             <div class="setting-group">
-              <label class="setting-label">
-                소리용 ID
-                <div class="input-group">
-                  <input
-                    type="text"
-                    placeholder="소리용 영상 ID를 입력하세요"
-                    value={videoId2()}
-                    onInput={async (e) => {
-                      const newId = e.currentTarget.value;
-                      setVideoId2(newId);
-                      await safeCreateOrUpdatePlayer2(newId);
-                    }}
-                  />
-                </div>
-              </label>
+              <div class="form-label-row">
+                <span class="form-label">소리용 ID</span>
+              </div>
+              <div class="input-group">
+                <input
+                  type="text"
+                  placeholder="소리용 영상 ID를 입력하세요"
+                  value={videoId2()}
+                  onInput={async (e) => {
+                    const newId = e.currentTarget.value;
+                    setVideoId2(newId);
+                    await safeCreateOrUpdatePlayer2(newId);
+                  }}
+                />
+              </div>
             </div>
           </div>
 
           <div class="setting-group">
-            <span class="setting-label">시간 간격 (초):</span>
-            <div class="input-group time-gap-group">
+            <div class="form-label-row" style={{ 'justify-content': 'space-between' }}>
+              <span class="form-label">현재 시간 간격</span>
+              <span class="form-value-tag">
+                {isNaN(timeGap()) ? '0.00s' : timeGap().toFixed(2) + 's'}
+              </span>
+            </div>
+            <div class="slider-group">
               {isDirectInput() ? (
-                <>
+                <div class="time-gap-input-row">
                   <input
                     type="number"
                     step={0.01}
                     value={timeGap()}
                     onInput={(e) => {
-                      const v = parseFloat(e.currentTarget.value);
-                      setTimeGap(v);
+                      const val = e.currentTarget.value;
+                      if (val === '' || val === '-') {
+                        setTimeGap(0);
+                        return;
+                      }
+                      const v = Number(val);
+                      if (!isNaN(v)) setTimeGap(v);
                     }}
                     class="time-gap-input"
                     style={{
@@ -467,25 +510,15 @@ function YoutubePlayer() {
                       'font-weight': 600,
                     }}
                   />
+                  <span class="time-gap-unit">s</span>
                   <button
                     type="button"
-                    class="slider-toggle-btn"
-                    style={{ 'margin-left': '12px' }}
-                    onClick={() => setIsDirectInput(false)}
+                    class="slider-text-btn"
+                    onClick={() => setIsDirectInput((v) => !v)}
                   >
-                    슬라이더로 돌아가기
+                    {isDirectInput() ? '슬라이더로 입력할래요?' : '직접 입력하고 싶나요?'}
                   </button>
-                  <div
-                    style={{
-                      color: '#357abd',
-                      'font-size': '0.95em',
-                      'margin-top': '6px',
-                      'font-weight': 500,
-                    }}
-                  >
-                    제한 없이 값을 입력하세요 (음수/양수 모두 가능)
-                  </div>
-                </>
+                </div>
               ) : (
                 <>
                   <Slider
@@ -500,26 +533,19 @@ function YoutubePlayer() {
                     isEditing={isEditingSlider()}
                     setIsEditing={setIsEditingSlider}
                   />
-                  <button
-                    type="button"
-                    class="slider-toggle-btn"
-                    style={{ 'margin-top': '8px' }}
-                    onClick={() => setIsDirectInput(true)}
-                  >
-                    직접입력
-                  </button>
+                  <div class="sliderDirectionHintRow">
+                    <span class="sliderDirectionHintLeft">← 소리가 느리면 왼쪽</span>
+                    <button
+                      type="button"
+                      class="slider-text-btn"
+                      onClick={() => setIsDirectInput((v) => !v)}
+                    >
+                      {isDirectInput() ? '슬라이더로 입력할래요?' : '직접 입력하고 싶나요?'}
+                    </button>
+                    <span class="sliderDirectionHintRight">소리가 빠르면 오른쪽 →</span>
+                  </div>
                 </>
               )}
-              <div class="help-text">
-                음수 값: 소리용 영상이 먼저 재생
-                <br />
-                양수 값: 화면용 영상이 먼저 재생
-                <br />
-                <br />
-                소리가 화면보다 빠르게 느껴진다면 → 음수 값으로 이동해주세요!
-                <br />
-                소리가 화면보다 느리게 느껴진다면 → 양수 값으로 이동해주세요!
-              </div>
             </div>
           </div>
         </div>
