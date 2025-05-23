@@ -1,5 +1,6 @@
 import { createSignal, onMount, For } from 'solid-js';
 import './Custom.css';
+import Slider from './components/Slider';
 
 interface VideoSettings {
   id: string;
@@ -31,6 +32,10 @@ function YoutubePlayer() {
   const [isSyncing, setIsSyncing] = createSignal(false);
   const [savedSettings, setSavedSettings] = createSignal<VideoSettings[]>([]);
   const [settingName, setSettingName] = createSignal('');
+  const [isEditingSlider, setIsEditingSlider] = createSignal(false);
+  const [isDirectInput, setIsDirectInput] = createSignal(false);
+  let sliderInputRef: HTMLInputElement | undefined;
+  let tooltipInputRef: HTMLInputElement | undefined;
 
   // 현재 재생 중인 영상들의 싱크를 다시 맞추는 함수
   const resyncPlayers = () => {
@@ -317,58 +322,80 @@ function YoutubePlayer() {
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">
-              <span>시간 간격 (초):</span>
-              <div class="input-group time-gap-group">
-                <div class="slider-container">
-                  <input
-                    type="range"
-                    min="-30"
-                    max="30"
-                    step="0.1"
-                    value={timeGap()}
-                    onInput={(e) => {
-                      setTimeGap(parseFloat(e.target.value));
-                      // 슬라이더 값이 변경될 때마다 싱크를 다시 맞춤
-                      resyncPlayers();
-                    }}
-                    class="time-gap-slider"
-                  />
-                  <div class="slider-labels">
-                    <span>소리 먼저</span>
-                    <span>동시 재생</span>
-                    <span>화면 먼저</span>
-                  </div>
-                </div>
-                <div class="time-gap-input-container">
+            <span class="setting-label">시간 간격 (초):</span>
+            <div class="input-group time-gap-group">
+              {isDirectInput() ? (
+                <>
                   <input
                     type="number"
-                    step="0.01"
+                    step={0.01}
                     value={timeGap()}
                     onInput={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (value >= -30 && value <= 30) {
-                        setTimeGap(value);
-                        // 입력 필드 값이 변경될 때마다 싱크를 다시 맞춤
-                        resyncPlayers();
-                      }
+                      const v = parseFloat(e.currentTarget.value);
+                      setTimeGap(v);
                     }}
                     class="time-gap-input"
+                    style={{
+                      width: '100%',
+                      'font-size': '1.1em',
+                      'text-align': 'center',
+                      'font-weight': 600,
+                    }}
                   />
-                  <span class="time-gap-unit">초</span>
-                </div>
-                <div class="help-text">
-                  음수 값: 소리용 영상이 먼저 재생
-                  <br />
-                  양수 값: 화면용 영상이 먼저 재생
-                  <br />
-                  <br />
-                  소리가 화면보다 빠르게 느껴진다면 → 음수 값으로 이동해주세요!
-                  <br />
-                  소리가 화면보다 느리게 느껴진다면 → 양수 값으로 이동해주세요!
-                </div>
+                  <button
+                    type="button"
+                    class="slider-toggle-btn"
+                    style={{ 'margin-left': '12px' }}
+                    onClick={() => setIsDirectInput(false)}
+                  >
+                    슬라이더로 돌아가기
+                  </button>
+                  <div
+                    style={{
+                      color: '#357abd',
+                      'font-size': '0.95em',
+                      'margin-top': '6px',
+                      'font-weight': 500,
+                    }}
+                  >
+                    제한 없이 값을 입력하세요 (음수/양수 모두 가능)
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Slider
+                    value={timeGap()}
+                    onChange={(v) => {
+                      setTimeGap(v);
+                      resyncPlayers();
+                    }}
+                    min={-60}
+                    max={60}
+                    step={0.1}
+                    isEditing={isEditingSlider()}
+                    setIsEditing={setIsEditingSlider}
+                  />
+                  <button
+                    type="button"
+                    class="slider-toggle-btn"
+                    style={{ 'margin-top': '8px' }}
+                    onClick={() => setIsDirectInput(true)}
+                  >
+                    직접입력
+                  </button>
+                </>
+              )}
+              <div class="help-text">
+                음수 값: 소리용 영상이 먼저 재생
+                <br />
+                양수 값: 화면용 영상이 먼저 재생
+                <br />
+                <br />
+                소리가 화면보다 빠르게 느껴진다면 → 음수 값으로 이동해주세요!
+                <br />
+                소리가 화면보다 느리게 느껴진다면 → 양수 값으로 이동해주세요!
               </div>
-            </label>
+            </div>
           </div>
 
           <button class="save-btn" onClick={saveSettings}>
