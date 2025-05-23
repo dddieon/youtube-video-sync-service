@@ -4,22 +4,25 @@ import Slider from './components/Slider';
 
 interface VideoSettings {
   id: string;
-  videoId: string;
+  videoId?: string;
+  videoId1?: string;
+  videoId2?: string;
   timeGap: number;
   name: string;
   createdAt: number;
 }
 
-// YouTube IFrame API 타입 정의
+// @ts-ignore: interface Window is for global augmentation only
+// @ts-ignore: _elementId, _options are for type signature only
 declare global {
   interface Window {
-    YT: {
-      Player: new (elementId: string, options: any) => any;
+    YT?: {
+      Player: new (_elementId: string, _options: any) => any;
       PlayerState: {
         PLAYING: number;
       };
     };
-    onYouTubeIframeAPIReady: () => void;
+    onYouTubeIframeAPIReady?: () => void;
   }
 }
 
@@ -27,15 +30,91 @@ function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
   const [player2, setPlayer2] = createSignal<any>(null);
   const [timeGap, setTimeGap] = createSignal(5);
-  const [videoId1, setVideoId1] = createSignal('F4IKWKH9oyg');
-  const [videoId2, setVideoId2] = createSignal('5jsdarfpsLk');
+  const [videoId1, setVideoId1] = createSignal('');
+  const [videoId2, setVideoId2] = createSignal('');
   const [isSyncing, setIsSyncing] = createSignal(false);
   const [savedSettings, setSavedSettings] = createSignal<VideoSettings[]>([]);
   const [settingName, setSettingName] = createSignal('');
   const [isEditingSlider, setIsEditingSlider] = createSignal(false);
   const [isDirectInput, setIsDirectInput] = createSignal(false);
-  let sliderInputRef: HTMLInputElement | undefined;
-  let tooltipInputRef: HTMLInputElement | undefined;
+  const [video1Error, setVideo1Error] = createSignal('');
+  const [video2Error, setVideo2Error] = createSignal('');
+
+  const EXAMPLE_SETTING = {
+    id: 'example',
+    videoId1: 'F4IKWKH9oyg',
+    videoId2: '5jsdarfpsLk',
+    timeGap: 5,
+    name: '예제(기본)',
+    createdAt: 0,
+  };
+
+  let ytApiReady: Promise<void> | null = null;
+  function loadYouTubeAPI() {
+    if (!ytApiReady) {
+      ytApiReady = new Promise((resolve) => {
+        if (window.YT && window.YT.Player) {
+          resolve();
+          return;
+        }
+        window.onYouTubeIframeAPIReady = () => resolve();
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      });
+    }
+    return ytApiReady;
+  }
+
+  async function safeCreateOrUpdatePlayer1(videoId: string) {
+    await loadYouTubeAPI();
+    createOrUpdatePlayer1(videoId);
+  }
+
+  async function safeCreateOrUpdatePlayer2(videoId: string) {
+    await loadYouTubeAPI();
+    createOrUpdatePlayer2(videoId);
+  }
+
+  async function createOrUpdatePlayer1(videoId: string) {
+    const el = document.getElementById('youtube-player-1');
+    if (!el) return;
+    if (player1()) {
+      player1().destroy();
+      setPlayer1(null);
+    }
+    const instance = new window.YT!.Player('youtube-player-1', {
+      height: '315',
+      width: '560',
+      playerVars: { mute: 1, enablejsapi: 1, origin: window.location.origin },
+      events: {
+        onReady: () => instance.loadVideoById(videoId),
+        onStateChange: onPlayerStateChange,
+        onError: () => setVideo1Error('화면용 영상 링크 올바르지 않음'),
+      },
+    });
+    setPlayer1(instance);
+  }
+
+  async function createOrUpdatePlayer2(videoId: string) {
+    const el = document.getElementById('youtube-player-2');
+    if (!el) return;
+    if (player2()) {
+      player2().destroy();
+      setPlayer2(null);
+    }
+    const instance = new window.YT!.Player('youtube-player-2', {
+      height: '315',
+      width: '560',
+      playerVars: { mute: 0, enablejsapi: 1, origin: window.location.origin },
+      events: {
+        onReady: () => instance.loadVideoById(videoId),
+        onStateChange: onPlayerStateChange2,
+        onError: () => setVideo2Error('소리용 영상 링크 올바르지 않음'),
+      },
+    });
+    setPlayer2(instance);
+  }
 
   // 현재 재생 중인 영상들의 싱크를 다시 맞추는 함수
   const resyncPlayers = () => {
@@ -49,8 +128,8 @@ function YoutubePlayer() {
 
     // 두 플레이어가 모두 재생 중인 경우에만 싱크를 맞춤
     if (
-      player1State === window.YT.PlayerState.PLAYING &&
-      player2State === window.YT.PlayerState.PLAYING
+      player1State === window.YT!.PlayerState.PLAYING &&
+      player2State === window.YT!.PlayerState.PLAYING
     ) {
       const gap = timeGap();
       // 화면용 영상의 현재 시간을 기준으로 소리용 영상의 시간을 조정
@@ -101,16 +180,6 @@ function YoutubePlayer() {
     setSettingName('');
   };
 
-  // 설정 불러오기
-  const loadSetting = (setting: VideoSettings) => {
-    setVideoId1(setting.videoId);
-    setTimeGap(setting.timeGap);
-    const player = player1();
-    if (player) {
-      player.loadVideoById(setting.videoId);
-    }
-  };
-
   // 설정 삭제하기
   const deleteSetting = (id: string) => {
     const updatedSettings = savedSettings().filter((setting) => setting.id !== id);
@@ -118,157 +187,107 @@ function YoutubePlayer() {
     localStorage.setItem('videoSettingsList', JSON.stringify(updatedSettings));
   };
 
-  // 디바운스 함수
-  const debounce = (fn: Function, delay: number) => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    return (...args: any[]) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => fn(...args), delay);
-    };
-  };
-
-  // 비디오 ID 업데이트 함수
-  const updateVideoId1 = (newId: string) => {
-    setVideoId1(newId);
-    debounce(() => {
-      const player = player1();
-      if (player) {
-        player.loadVideoById(newId);
-      }
-    }, 500)();
-  };
-
-  const updateVideoId2 = (newId: string) => {
-    setVideoId2(newId);
-    debounce(() => {
-      const player = player2();
-      if (player) {
-        player.loadVideoById(newId);
-      }
-    }, 500)();
-  };
-
   onMount(() => {
     loadSettingsList();
 
-    const onPlayerReady1 = () => {
-      const player = player1();
-      if (player) {
-        player.loadVideoById(videoId1());
+    // YouTube IFrame API 로드 (최초 1회만)
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      if (firstScriptTag.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
       }
-    };
-
-    const onPlayerReady2 = () => {
-      const player = player2();
-      if (player) {
-        player.loadVideoById(videoId2());
-      }
-    };
-
-    const syncPlayers = (sourcePlayer: any, targetPlayer: any, timeDiff: number) => {
-      setIsSyncing(true);
-      const currentTime = sourcePlayer.getCurrentTime();
-      const seekTime = currentTime + timeDiff;
-
-      // 소리용 영상(플레이어2)의 재생을 일시 중지
-      player2().pauseVideo();
-
-      if (seekTime < 0) {
-        // 음수 시간으로 시작해야 하는 경우
-        targetPlayer.seekTo(0);
-        setTimeout(
-          () => {
-            sourcePlayer.seekTo(Math.abs(seekTime));
-            // 소리용 영상 재생 시작
-            player2().playVideo();
-          },
-          Math.abs(seekTime) * 1000,
-        );
-      } else {
-        targetPlayer.seekTo(seekTime);
-        // 소리용 영상 재생 시작
-        player2().playVideo();
-      }
-      setTimeout(() => setIsSyncing(false), 1000);
-    };
-
-    const onPlayerStateChange = (event: { data: number }) => {
-      if (event.data === window.YT.PlayerState.PLAYING && !isSyncing()) {
-        const gap = timeGap();
-        if (gap < 0) {
-          // 음수 간격일 때는 소리용 영상이 먼저 재생
-          syncPlayers(player2(), player1(), Math.abs(gap));
-        } else {
-          syncPlayers(player1(), player2(), -gap);
-        }
-      }
-    };
-
-    const onPlayerStateChange2 = (event: { data: number }) => {
-      if (event.data === window.YT.PlayerState.PLAYING && !isSyncing()) {
-        const gap = timeGap();
-        if (gap < 0) {
-          // 음수 간격일 때는 화면용 영상이 나중에 재생
-          syncPlayers(player1(), player2(), -Math.abs(gap));
-        } else {
-          syncPlayers(player2(), player1(), gap + 0.25);
-        }
-      }
-    };
-
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    if (firstScriptTag.parentNode) {
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     }
-
-    window.onYouTubeIframeAPIReady = () => {
-      setPlayer1(
-        new window.YT.Player('youtube-player-1', {
-          height: '315',
-          width: '560',
-          playerVars: {
-            mute: 1, // 소리 기본값 0
-          },
-          events: {
-            onReady: onPlayerReady1,
-            onStateChange: onPlayerStateChange,
-          },
-        }),
-      );
-
-      setPlayer2(
-        new window.YT.Player('youtube-player-2', {
-          height: '315',
-          width: '560',
-          events: {
-            onReady: onPlayerReady2,
-            onStateChange: onPlayerStateChange2,
-          },
-        }),
-      );
-    };
   });
+
+  const onPlayerStateChange = (event: { data: number }) => {
+    if (event.data === window.YT!.PlayerState.PLAYING && !isSyncing()) {
+      const gap = timeGap();
+      if (gap < 0) {
+        // 음수 간격일 때는 소리용 영상이 먼저 재생
+        syncPlayers(player2(), player1(), Math.abs(gap));
+      } else {
+        syncPlayers(player1(), player2(), -gap);
+      }
+    }
+  };
+
+  const onPlayerStateChange2 = (event: { data: number }) => {
+    if (event.data === window.YT!.PlayerState.PLAYING && !isSyncing()) {
+      const gap = timeGap();
+      if (gap < 0) {
+        // 음수 간격일 때는 화면용 영상이 나중에 재생
+        syncPlayers(player1(), player2(), -Math.abs(gap));
+      } else {
+        syncPlayers(player2(), player1(), gap + 0.25);
+      }
+    }
+  };
+
+  const syncPlayers = (sourcePlayer: any, targetPlayer: any, timeDiff: number) => {
+    setIsSyncing(true);
+    const currentTime = sourcePlayer.getCurrentTime();
+    const seekTime = currentTime + timeDiff;
+
+    // 소리용 영상(플레이어2)의 재생을 일시 중지
+    player2().pauseVideo();
+
+    if (seekTime < 0) {
+      // 음수 시간으로 시작해야 하는 경우
+      targetPlayer.seekTo(0);
+      setTimeout(
+        () => {
+          sourcePlayer.seekTo(Math.abs(seekTime));
+          // 소리용 영상 재생 시작
+          player2().playVideo();
+        },
+        Math.abs(seekTime) * 1000,
+      );
+    } else {
+      targetPlayer.seekTo(seekTime);
+      // 소리용 영상 재생 시작
+      player2().playVideo();
+    }
+    setTimeout(() => setIsSyncing(false), 1000);
+  };
 
   return (
     <div class="app-container">
       <div class="sidebar">
         <h2>저장된 설정</h2>
         <div class="settings-list">
-          <For each={savedSettings()}>
+          <For each={[EXAMPLE_SETTING, ...savedSettings()]}>
             {(setting) => (
               <div class="setting-item">
-                <div class="setting-info" onClick={() => loadSetting(setting)}>
+                <div
+                  class="setting-info"
+                  onClick={async () => {
+                    setVideoId1(setting.videoId1 || '');
+                    setVideoId2(setting.videoId2 || '');
+                    setTimeGap(setting.timeGap);
+                    await safeCreateOrUpdatePlayer1(setting.videoId1 || '');
+                    await safeCreateOrUpdatePlayer2(setting.videoId2 || '');
+                  }}
+                >
                   <div class="setting-name">{setting.name}</div>
                   <div class="setting-details">
-                    <span>ID: {setting.videoId}</span>
+                    {setting.id === 'example' ? (
+                      <>
+                        <span>화면용: {setting.videoId1}</span>
+                        <span>소리용: {setting.videoId2}</span>
+                      </>
+                    ) : (
+                      <span>ID: {setting.videoId1 ?? ''}</span>
+                    )}
                     <span>간격: {setting.timeGap}초</span>
                   </div>
                 </div>
-                <button class="delete-btn" onClick={() => deleteSetting(setting.id)}>
-                  삭제
-                </button>
+                {setting.id !== 'example' && (
+                  <button class="delete-btn" onClick={() => deleteSetting(setting.id)}>
+                    삭제
+                  </button>
+                )}
               </div>
             )}
           </For>
@@ -301,7 +320,11 @@ function YoutubePlayer() {
                   type="text"
                   placeholder="화면용 영상 ID를 입력하세요"
                   value={videoId1()}
-                  onInput={(e) => updateVideoId1(e.target.value)}
+                  onInput={async (e) => {
+                    const newId = e.currentTarget.value;
+                    setVideoId1(newId);
+                    await safeCreateOrUpdatePlayer1(newId);
+                  }}
                 />
               </div>
             </label>
@@ -315,7 +338,11 @@ function YoutubePlayer() {
                   type="text"
                   placeholder="소리용 영상 ID를 입력하세요"
                   value={videoId2()}
-                  onInput={(e) => updateVideoId2(e.target.value)}
+                  onInput={async (e) => {
+                    const newId = e.currentTarget.value;
+                    setVideoId2(newId);
+                    await safeCreateOrUpdatePlayer2(newId);
+                  }}
                 />
               </div>
             </label>
@@ -406,11 +433,23 @@ function YoutubePlayer() {
         <div class="video-container">
           <div class="video-wrapper">
             <h3>화면용 영상</h3>
-            <div id="youtube-player-1" />
+            {videoId1() === '' ? (
+              <div class="video-skeleton">화면용 영상 링크 필요</div>
+            ) : video1Error() ? (
+              <div class="video-skeleton error">{video1Error()}</div>
+            ) : (
+              <div id="youtube-player-1" />
+            )}
           </div>
           <div class="video-wrapper">
             <h3>소리용 영상</h3>
-            <div id="youtube-player-2" />
+            {videoId2() === '' ? (
+              <div class="video-skeleton">소리용 영상 링크 필요</div>
+            ) : video2Error() ? (
+              <div class="video-skeleton error">{video2Error()}</div>
+            ) : (
+              <div id="youtube-player-2" />
+            )}
           </div>
         </div>
       </div>
