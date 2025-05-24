@@ -284,44 +284,11 @@ body {
 }
 
 .video-skeleton::before {
-  content: '화면용 영상만 컨트롤 가능합니다';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--theme-panel);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1;
-  transition: opacity 0.2s;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--theme-text);
-  font-size: 0.98em;
-  font-weight: 500;
-  gap: 6px;
-}
-
-.video-skeleton::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 8px;
+  content: none;
 }
 
 .sub-video-area:hover .video-skeleton::before {
-  opacity: 0.97;
+  opacity: 0;
 }
 
 .video-skeleton.error {
@@ -694,4 +661,38 @@ input[type='number'] {
   overflow: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+.sub-video-blur {
+  filter: blur(4px) grayscale(0.5) brightness(0.7);
+  pointer-events: none;
+  transition: filter 0.2s;
+}
+
+.sub-video-blur-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(237, 66, 69, 0.32); /* 빨간색 반투명 */
+  border-radius: 12px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sub-video-blur-overlay-text {
+  color: #fff;
+  font-size: 1.15em;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 0 16px;
 }

@@ -1,7 +1,10 @@
-import { createSignal, onMount, For } from 'solid-js';
+import { createSignal, onMount, For, createEffect } from 'solid-js';
 import './reset.css';
 import './Custom.css';
 import Slider from './components/Slider';
+import VolumeSlider from './components/VolumeSlider';
+import VolumeKnob from './components/VolumeKnob';
+import DiscordVolumeControl from './components/DiscordVolumeControl';
 
 interface VideoSettings {
   id: string;
@@ -96,7 +99,7 @@ const SettingsIcon = () => (
     viewBox="0 0 24 24"
   >
     <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 11 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 11 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
@@ -113,6 +116,8 @@ function YoutubePlayer() {
   const [video1Error, setVideo1Error] = createSignal('');
   const [video2Error, setVideo2Error] = createSignal('');
   const [layoutMode, setLayoutMode] = createSignal<'default' | 'main-only' | 'equal'>('default');
+  const [volume, setVolume] = createSignal(100);
+  const [showVolume, setShowVolume] = createSignal(false);
 
   const EXAMPLE_SETTING = {
     id: 'example',
@@ -407,6 +412,27 @@ function YoutubePlayer() {
     });
   }
 
+  createEffect(() => {
+    const p2 = player2();
+    if (!p2) return;
+    if (videoId1() === '' || video1Error()) {
+      p2.pauseVideo();
+    }
+  });
+
+  // 볼륨 슬라이더 조작 시 player2 볼륨 연동
+  function handleVolumeChange(v: number) {
+    setVolume(v);
+    const p2 = player2();
+    if (p2) p2.setVolume(v);
+  }
+
+  // player2가 생성될 때 볼륨 동기화
+  createEffect(() => {
+    const p2 = player2();
+    if (p2) p2.setVolume(volume());
+  });
+
   return (
     <div class="app-container">
       <div class="sidebar">
@@ -476,16 +502,16 @@ function YoutubePlayer() {
             전체화면으로
           </button>
           <button
-            class={layoutMode() === 'main-only' ? 'layout-btn active' : 'layout-btn'}
-            onClick={() => setLayoutMode('main-only')}
-          >
-            크게보기 (소리용 영상 가리기)
-          </button>
-          <button
             class={layoutMode() === 'equal' ? 'layout-btn active' : 'layout-btn'}
             onClick={() => setLayoutMode('equal')}
           >
-            1:1로 보기
+            기본보기
+          </button>
+          <button
+            class={layoutMode() === 'main-only' ? 'layout-btn active' : 'layout-btn'}
+            onClick={() => setLayoutMode('main-only')}
+          >
+            화면용 영상만
           </button>
         </div>
         <div
@@ -526,21 +552,21 @@ function YoutubePlayer() {
                 layoutMode() === 'main-only' ? 'sub-video-area visually-hidden' : 'sub-video-area'
               }
             >
-              <div class="video-label">
+              <div class="video-label" style={{ display: 'flex', 'align-items': 'center' }}>
                 <span class="icon">
                   <VolumeIcon />
                 </span>
                 소리용 영상
               </div>
-              <div class="sub-video video-wrapper">
+              <div
+                class="sub-video video-wrapper"
+                style={{ cursor: 'not-allowed', position: 'relative' }}
+              >
                 <div id="youtube-player-2" class="youtube-player" />
                 {(videoId2() === '' || video2Error()) && (
                   <div class={`video-skeleton${video2Error() ? ' error' : ' preview'}`}>
                     {video2Error() ? (
-                      <>
-                        <span class="preview-icon">❌</span>
-                        <span class="preview-text">{video2Error()}</span>
-                      </>
+                      <span class="preview-text">{video2Error()}</span>
                     ) : (
                       <>
                         <span class="preview-icon">🔈</span>
@@ -549,6 +575,7 @@ function YoutubePlayer() {
                     )}
                   </div>
                 )}
+                <DiscordVolumeControl value={volume()} onChange={handleVolumeChange} />
               </div>
             </div>
           </div>
