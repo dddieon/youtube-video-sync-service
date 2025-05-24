@@ -180,6 +180,7 @@ function YoutubePlayer() {
   };
 
   let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+  let allowSoundPlay = false;
 
   const onPlayerStateChange = (event: { data: number }) => {
     const player1Instance = player1();
@@ -189,36 +190,42 @@ function YoutubePlayer() {
       return;
     }
 
-    const gap = timeGap();
-    console.log('[SYNC] onPlayerStateChange', { eventData: event.data, gap });
-
-    // 이전 타이머가 있으면 취소
     if (syncTimeout) {
       console.log('[SYNC] 기존 타이머 clear');
       clearTimeout(syncTimeout);
       syncTimeout = null;
     }
+    allowSoundPlay = false;
+
+    const gap = timeGap();
+    const currentTime = player1Instance.getCurrentTime();
+    const targetTime = currentTime - gap;
+    console.log('[SYNC] onPlayerStateChange', {
+      eventData: event.data,
+      gap,
+      currentTime,
+      targetTime,
+    });
 
     if (event.data === window.YT!.PlayerState.PLAYING) {
-      const currentTime = player1Instance.getCurrentTime();
-      const targetTime = currentTime - gap;
-      console.log('[SYNC] PLAYING: 화면용 현재', currentTime, '소리용 target', targetTime);
+      player1Instance.playVideo();
 
       player2Instance.pauseVideo();
-      if (targetTime < 0) {
+
+      // "처음 재생(0초)"일 때만 gap만큼 대기, 그 외에는 바로 싱크
+      if (currentTime < 0.1 && gap > 0) {
         player2Instance.seekTo(0);
-        console.log('[SYNC] 소리용 영상 0초에서', Math.abs(targetTime), '초 대기 후 재생');
-        syncTimeout = setTimeout(
-          () => {
-            console.log('[SYNC] 소리용 영상 playVideo() 실행');
-            player2Instance.playVideo();
-            syncTimeout = null;
-          },
-          Math.abs(targetTime) * 1000,
-        );
+        console.log(`[SYNC] gap > 0 & 처음 재생: 소리용 영상 0초에서 ${gap}초 대기 후 재생`);
+        syncTimeout = setTimeout(() => {
+          console.log('[SYNC] 소리용 영상 playVideo() 실행');
+          allowSoundPlay = true;
+          player2Instance.playVideo();
+          syncTimeout = null;
+        }, gap * 1000);
       } else {
+        allowSoundPlay = true;
         player2Instance.seekTo(targetTime);
-        console.log('[SYNC] 소리용 영상 targetTime에서 바로 재생');
+        console.log('[SYNC] seek/재생: 소리용 영상 targetTime에서 바로 재생');
         player2Instance.playVideo();
       }
     } else if (event.data === window.YT!.PlayerState.PAUSED) {
@@ -229,24 +236,20 @@ function YoutubePlayer() {
         clearTimeout(syncTimeout);
         syncTimeout = null;
       }
+      allowSoundPlay = false;
     }
   };
 
   const onPlayerStateChange2 = (event: { data: number }) => {
-    const player1Instance = player1();
     const player2Instance = player2();
-    if (!player1Instance || !player2Instance) return;
+    if (!player2Instance) return;
 
-    console.log('[DEBUG] onPlayerStateChange2', {
-      eventData: event.data,
-      player2State: player2Instance.getPlayerState(),
-    });
-
-    if (event.data === window.YT!.PlayerState.PAUSED) {
-      if (player1Instance.getPlayerState() === window.YT!.PlayerState.PLAYING) {
-        player1Instance.pauseVideo();
-      }
+    // gap 타이머 끝나기 전 PLAYING 상태면 무조건 멈춤
+    if (!allowSoundPlay && event.data === window.YT!.PlayerState.PLAYING) {
+      console.log('[SYNC] 소리용 영상이 gap 대기 중인데 PLAYING 상태! 강제 pause');
+      player2Instance.pauseVideo();
     }
+    // 소리용 영상에서 발생하는 다른 이벤트는 무시 (싱크 트리거 X)
   };
 
   async function createOrUpdatePlayer1(videoId: string) {
@@ -384,6 +387,24 @@ function YoutubePlayer() {
       setSettingName(name.trim());
       saveSettings();
     }
+  }
+
+  function syncTimeGap() {
+    const player1Instance = player1();
+    const player2Instance = player2();
+    if (!player1Instance || !player2Instance) return;
+
+    const gap = timeGap();
+    const currentTime = player1Instance.getCurrentTime();
+    const targetTime = currentTime - gap;
+    allowSoundPlay = true;
+    player2Instance.seekTo(targetTime);
+    player2Instance.playVideo();
+    console.log('[SYNC] timeGap 변경: 소리용 영상 targetTime에서 바로 재생', {
+      gap,
+      currentTime,
+      targetTime,
+    });
   }
 
   return (
@@ -584,7 +605,10 @@ function YoutubePlayer() {
                         return;
                       }
                       const v = Number(val);
-                      if (!isNaN(v)) setTimeGap(v);
+                      if (!isNaN(v)) {
+                        setTimeGap(v);
+                        syncTimeGap();
+                      }
                     }}
                     class="time-gap-input"
                     style={{
@@ -609,7 +633,7 @@ function YoutubePlayer() {
                     value={timeGap()}
                     onChange={(v) => {
                       setTimeGap(v);
-                      resyncPlayers();
+                      syncTimeGap();
                     }}
                     min={-60}
                     max={60}
