@@ -6,6 +6,8 @@ import VolumeSlider from './components/VolumeSlider';
 import VolumeKnob from './components/VolumeKnob';
 import DiscordVolumeControl from './components/DiscordVolumeControl';
 import DiscordVideoActionButtons from './components/DiscordVideoActionButtons';
+import PasteButton from './components/PasteButton';
+import { parseYoutubeId } from './utils/youtube';
 
 interface VideoSettings {
   id: string;
@@ -585,6 +587,17 @@ function YoutubePlayer() {
                     resyncPlayers();
                   }}
                 />
+                <PasteButton
+                  onPaste={async (text) => {
+                    const id = parseYoutubeId(text);
+                    if (id) {
+                      setVideoId1(id);
+                      setVideo1Error('');
+                      await safeCreateOrUpdatePlayer1(id);
+                      resyncPlayers();
+                    }
+                  }}
+                />
               </div>
             </div>
             <div class="setting-group">
@@ -602,6 +615,17 @@ function YoutubePlayer() {
                     setVideo2Error('');
                     await safeCreateOrUpdatePlayer2(newId);
                     resyncPlayers();
+                  }}
+                />
+                <PasteButton
+                  onPaste={async (text) => {
+                    const id = parseYoutubeId(text);
+                    if (id) {
+                      setVideoId2(id);
+                      setVideo2Error('');
+                      await safeCreateOrUpdatePlayer2(id);
+                      resyncPlayers();
+                    }
                   }}
                 />
               </div>
