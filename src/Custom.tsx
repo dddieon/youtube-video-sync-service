@@ -633,75 +633,64 @@ function YoutubePlayer() {
           </div>
 
           <div class="setting-group">
-            <div class="form-label-row" style={{ 'justify-content': 'space-between' }}>
-              <span class="form-label">현재 시간 간격</span>
-              <span class="form-value-tag">
-                {isNaN(timeGap()) ? '0.00s' : timeGap().toFixed(2) + 's'}
-              </span>
+            <div class="form-label-row">
+              <span class="form-label">현재 시간 간격 (초 단위 / 소수점 및 음수 가능)</span>
             </div>
-            <div class="slider-group">
-              {isDirectInput() ? (
-                <div class="time-gap-input-row">
-                  <input
-                    type="number"
-                    step={0.01}
-                    value={timeGap()}
-                    onInput={(e) => {
-                      const val = e.currentTarget.value;
-                      if (val === '' || val === '-') {
-                        setTimeGap(0);
-                        return;
-                      }
-                      const v = Number(val);
-                      if (!isNaN(v)) {
-                        setTimeGap(v);
-                        syncTimeGap();
-                      }
-                    }}
-                    class="time-gap-input"
-                    style={{
-                      width: '100%',
-                      'font-size': '1.1em',
-                      'text-align': 'center',
-                      'font-weight': 600,
-                    }}
-                  />
-                  <span class="time-gap-unit">s</span>
-                  <button
-                    type="button"
-                    class="slider-text-btn"
-                    onClick={() => setIsDirectInput((v) => !v)}
-                  >
-                    {isDirectInput() ? '슬라이더로' : '직접 입력'}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <Slider
-                    value={timeGap()}
-                    onChange={(v) => {
+            <div
+              style={{
+                display: 'flex',
+                'flex-direction': 'column',
+                'align-items': 'flex-start',
+                gap: '4px',
+              }}
+            >
+              <div style={{ display: 'flex', 'align-items': 'center', gap: '0' }}>
+                <input
+                  type="number"
+                  step={0.01}
+                  value={timeGap()}
+                  onInput={(e) => {
+                    const val = e.currentTarget.value;
+                    if (val === '' || val === '-') {
+                      setTimeGap(0);
+                      return;
+                    }
+                    const v = Number(val);
+                    if (!isNaN(v)) {
                       setTimeGap(v);
                       syncTimeGap();
-                    }}
-                    min={-60}
-                    max={60}
-                    step={0.1}
-                    isEditing={isEditingSlider()}
-                    setIsEditing={setIsEditingSlider}
-                  />
-                  <div class="sliderDirectionHintRow">
-                    <span class="sliderDirectionHintLeft">← 소리가 느리면 왼쪽</span>
-                    <button
-                      type="button"
-                      class="slider-text-btn"
-                      onClick={() => setIsDirectInput((v) => !v)}
-                    >
-                      {isDirectInput() ? '슬라이더로 돌아가기' : '직접 입력'}
-                    </button>
-                    <span class="sliderDirectionHintRight">소리가 빠르면 오른쪽 →</span>
-                  </div>
-                </>
-              )}
+                    }
+                  }}
+                  class="time-gap-input"
+                  style={{
+                    width: '80px',
+                    'font-size': '1.1em',
+                    'font-weight': 600,
+                  }}
+                />
+                <span class="time-gap-unit">s</span>
+              </div>
+              <span
+                class="slider-group"
+                style={{ flex: 1, display: 'flex', 'flex-direction': 'column' }}
+              >
+                <Slider
+                  value={timeGap()}
+                  onChange={(v) => {
+                    setTimeGap(v);
+                    syncTimeGap();
+                  }}
+                  min={-60}
+                  max={60}
+                  step={0.1}
+                  isEditing={isEditingSlider()}
+                  setIsEditing={setIsEditingSlider}
+                />
+                <div class="sliderDirectionHintRow">
+                  <span class="sliderDirectionHintLeft">← 소리가 느리면 왼쪽</span>
+                  <span class="sliderDirectionHintRight">소리가 빠르면 오른쪽 →</span>
+                </div>
+              </span>
             </div>
           </div>
         </div>

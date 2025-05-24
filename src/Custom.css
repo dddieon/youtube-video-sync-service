@@ -303,7 +303,7 @@ body {
   border: 1px solid var(--theme-border);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 24px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -406,6 +406,7 @@ body {
 }
 
 .slider-group {
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -426,7 +427,8 @@ body {
 }
 .time-gap-input {
   height: 40px;
-  padding: 0 14px;
+  padding-right: 2px;
+  padding-left: 12px;
   background: var(--theme-input-bg);
   color: var(--theme-text-muted);
   border: 1.5px solid var(--theme-input-border);
@@ -436,7 +438,7 @@ body {
   border-bottom-left-radius: 6px;
   font-size: 1.1em;
   font-weight: 600;
-  text-align: right;
+  text-align: center;
   box-sizing: border-box;
   max-width: 100px;
 }
@@ -721,4 +723,11 @@ input[type='number'] {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.time-gap-input:focus {
+  outline: none;
+  border-color: var(--theme-accent);
+  border-right: 2px solid var(--theme-accent);
+  box-shadow: 0 0 0 2px rgba(255, 79, 163, 0.15);
 }
