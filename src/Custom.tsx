@@ -505,16 +505,21 @@ function YoutubePlayer() {
                 </span>
                 화면용 영상
               </div>
-              {videoId1() === '' ? (
-                <div class="video-skeleton preview">
-                  <span class="preview-icon">🖥️</span>
-                  <span class="preview-text">ID를 입력하세요</span>
-                </div>
-              ) : video1Error() ? (
-                <div class="video-skeleton error">{video1Error()}</div>
-              ) : (
-                <div id="youtube-player-1" class="main-video" />
-              )}
+              <div class="main-video video-wrapper">
+                <div id="youtube-player-1" class="youtube-player" />
+                {(videoId1() === '' || video1Error()) && (
+                  <div class={`video-skeleton${video1Error() ? ' error' : ' preview'}`}>
+                    {video1Error() ? (
+                      <span class="preview-text">{video1Error()}</span>
+                    ) : (
+                      <>
+                        <span class="preview-icon">🖥️</span>
+                        <span class="preview-text">ID를 입력하세요</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <div
               class={
@@ -527,19 +532,24 @@ function YoutubePlayer() {
                 </span>
                 소리용 영상
               </div>
-              {videoId2() === '' ? (
-                <div class="video-skeleton preview">
-                  <span class="preview-icon">🔈</span>
-                  <span class="preview-text">ID를 입력하세요</span>
-                </div>
-              ) : video2Error() ? (
-                <div class="video-skeleton error">
-                  <span class="preview-icon">❌</span>
-                  <span class="preview-text">{video2Error()}</span>
-                </div>
-              ) : (
-                <div id="youtube-player-2" class="sub-video" />
-              )}
+              <div class="sub-video video-wrapper">
+                <div id="youtube-player-2" class="youtube-player" />
+                {(videoId2() === '' || video2Error()) && (
+                  <div class={`video-skeleton${video2Error() ? ' error' : ' preview'}`}>
+                    {video2Error() ? (
+                      <>
+                        <span class="preview-icon">❌</span>
+                        <span class="preview-text">{video2Error()}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span class="preview-icon">🔈</span>
+                        <span class="preview-text">ID를 입력하세요</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -558,6 +568,7 @@ function YoutubePlayer() {
                   onInput={async (e) => {
                     const newId = e.currentTarget.value;
                     setVideoId1(newId);
+                    setVideo1Error('');
                     await safeCreateOrUpdatePlayer1(newId);
                     resyncPlayers();
                   }}
@@ -576,6 +587,7 @@ function YoutubePlayer() {
                   onInput={async (e) => {
                     const newId = e.currentTarget.value;
                     setVideoId2(newId);
+                    setVideo2Error('');
                     await safeCreateOrUpdatePlayer2(newId);
                     resyncPlayers();
                   }}

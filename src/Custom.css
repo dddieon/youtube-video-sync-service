@@ -174,19 +174,31 @@ body {
 .sub-video-area {
   flex: 1;
   min-width: 320px;
+  display: flex;
+  flex-direction: column;
 }
 .main-video-block {
   margin: 0;
 }
 
+.main-video.video-wrapper,
+.sub-video.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 315px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .main-video,
 .sub-video {
   width: 100%;
-  aspect-ratio: 16/9;
+  height: 315px;
   background: #000;
   border-radius: 12px;
   box-shadow: none;
   border: 1px solid var(--theme-border);
+  position: relative;
 }
 
 .video-label {
@@ -198,6 +210,8 @@ body {
   color: var(--theme-text);
   padding: 0 4px;
   height: 24px;
+  position: relative;
+  z-index: 3;
 }
 
 .fullscreen-btn {
@@ -224,21 +238,49 @@ body {
   opacity: 0.7;
 }
 
+.youtube-player {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
 .video-skeleton,
 .video-skeleton.error {
-  margin-bottom: 5px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  background: #444851;
-  border-radius: 8px;
-  color: var(--theme-text-muted);
-  min-height: 315px;
-  text-align: center;
-  font-size: 1.1em;
+  height: 100%;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 12px;
+  background: #444851;
+  color: var(--theme-text-muted);
+  font-size: 1.1em;
   border: 1px solid var(--theme-border);
-  position: relative;
+}
+.video-skeleton.error {
+  background: #3a2323;
+  color: var(--theme-danger);
+}
+
+.video-skeleton.preview {
+  background: var(--theme-card);
+  color: var(--theme-text-muted);
+  flex-direction: column;
+  gap: 12px;
+  font-size: 1.08em;
+  font-weight: 500;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: background 0.18s;
 }
 
 .video-skeleton::before {
@@ -568,26 +610,6 @@ input[type='number'] {
 
 #youtube-player-2 {
   pointer-events: none;
-}
-
-.video-skeleton.preview {
-  background: var(--theme-card);
-  color: var(--theme-text-muted);
-  flex-direction: column;
-  gap: 12px;
-  font-size: 1.08em;
-  font-weight: 500;
-  justify-content: center;
-  align-items: center;
-  display: flex;
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  transition: background 0.18s;
-}
-
-.sub-video-area:hover .video-skeleton.preview,
-.main-video-block:hover .video-skeleton.preview {
-  background: var(--theme-panel);
 }
 
 .preview-icon {
