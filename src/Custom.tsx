@@ -147,6 +147,11 @@ function YoutubePlayer() {
 
   async function safeCreateOrUpdatePlayer2(videoId: string) {
     await loadYouTubeAPI();
+    if (player2()) {
+      player2().destroy();
+      setPlayer2(null);
+      await new Promise((res) => setTimeout(res, 100)); // 100ms 딜레이
+    }
     createOrUpdatePlayer2(videoId);
   }
 
@@ -174,20 +179,74 @@ function YoutubePlayer() {
     }
   };
 
-  // 화면용 영상의 시간 변경 감지 및 동기화
-  const onPlayerReady = (event: any) => {
-    const player = event.target;
-    player.addEventListener('onStateChange', (e: any) => {
-      if (e.data === window.YT!.PlayerState.PLAYING) {
-        // 재생 시작 시 소리용 영상 동기화
-        const currentTime = player.getCurrentTime();
-        const gap = timeGap();
-        if (player2()) {
-          player2().seekTo(currentTime + gap, true);
-          player2().playVideo();
-        }
+  let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const onPlayerStateChange = (event: { data: number }) => {
+    const player1Instance = player1();
+    const player2Instance = player2();
+    if (!player1Instance || !player2Instance) {
+      console.log('[SYNC] player1 또는 player2 인스턴스 없음');
+      return;
+    }
+
+    const gap = timeGap();
+    console.log('[SYNC] onPlayerStateChange', { eventData: event.data, gap });
+
+    // 이전 타이머가 있으면 취소
+    if (syncTimeout) {
+      console.log('[SYNC] 기존 타이머 clear');
+      clearTimeout(syncTimeout);
+      syncTimeout = null;
+    }
+
+    if (event.data === window.YT!.PlayerState.PLAYING) {
+      const currentTime = player1Instance.getCurrentTime();
+      const targetTime = currentTime - gap;
+      console.log('[SYNC] PLAYING: 화면용 현재', currentTime, '소리용 target', targetTime);
+
+      player2Instance.pauseVideo();
+      if (targetTime < 0) {
+        player2Instance.seekTo(0);
+        console.log('[SYNC] 소리용 영상 0초에서', Math.abs(targetTime), '초 대기 후 재생');
+        syncTimeout = setTimeout(
+          () => {
+            console.log('[SYNC] 소리용 영상 playVideo() 실행');
+            player2Instance.playVideo();
+            syncTimeout = null;
+          },
+          Math.abs(targetTime) * 1000,
+        );
+      } else {
+        player2Instance.seekTo(targetTime);
+        console.log('[SYNC] 소리용 영상 targetTime에서 바로 재생');
+        player2Instance.playVideo();
       }
+    } else if (event.data === window.YT!.PlayerState.PAUSED) {
+      console.log('[SYNC] 화면용 영상 PAUSED, 소리용 영상도 일시정지');
+      player2Instance.pauseVideo();
+      if (syncTimeout) {
+        console.log('[SYNC] 일시정지로 타이머 clear');
+        clearTimeout(syncTimeout);
+        syncTimeout = null;
+      }
+    }
+  };
+
+  const onPlayerStateChange2 = (event: { data: number }) => {
+    const player1Instance = player1();
+    const player2Instance = player2();
+    if (!player1Instance || !player2Instance) return;
+
+    console.log('[DEBUG] onPlayerStateChange2', {
+      eventData: event.data,
+      player2State: player2Instance.getPlayerState(),
     });
+
+    if (event.data === window.YT!.PlayerState.PAUSED) {
+      if (player1Instance.getPlayerState() === window.YT!.PlayerState.PLAYING) {
+        player1Instance.pauseVideo();
+      }
+    }
   };
 
   async function createOrUpdatePlayer1(videoId: string) {
@@ -200,13 +259,22 @@ function YoutubePlayer() {
     const instance = new window.YT!.Player('youtube-player-1', {
       height: '315',
       width: '560',
-      playerVars: { mute: 1, enablejsapi: 1, origin: window.location.origin },
+      playerVars: {
+        mute: 1,
+        enablejsapi: 1,
+        origin: window.location.origin,
+        autoplay: 0,
+        playsinline: 1,
+        start: 0,
+      },
       events: {
-        onReady: (e: any) => {
-          instance.loadVideoById(videoId);
-          onPlayerReady(e);
+        onReady: () => {
+          instance.cueVideoById(videoId);
+          setTimeout(() => {
+            instance.pauseVideo();
+          }, 100);
         },
-        onStateChange: () => {},
+        onStateChange: onPlayerStateChange,
         onError: () => setVideo1Error('화면용 영상 링크 올바르지 않음'),
       },
     });
@@ -227,16 +295,24 @@ function YoutubePlayer() {
         mute: 0,
         enablejsapi: 1,
         origin: window.location.origin,
-        controls: 0, // 컨트롤 비활성화
-        disablekb: 1, // 키보드 단축키 비활성화
-        fs: 0, // 전체화면 버튼 비활성화
-        rel: 0, // 관련 동영상 비활성화
-        showinfo: 0, // 동영상 정보 비활성화
-        modestbranding: 1, // YouTube 로고 최소화
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        rel: 0,
+        showinfo: 0,
+        modestbranding: 1,
+        autoplay: 0,
+        playsinline: 1,
+        start: 0,
       },
       events: {
-        onReady: () => instance.loadVideoById(videoId),
-        onStateChange: () => {}, // 이벤트 핸들링 제거
+        onReady: () => {
+          instance.cueVideoById(videoId);
+          setTimeout(() => {
+            instance.pauseVideo();
+          }, 100);
+        },
+        onStateChange: onPlayerStateChange2,
         onError: () => setVideo2Error('소리용 영상 링크 올바르지 않음'),
       },
     });
@@ -332,7 +408,11 @@ function YoutubePlayer() {
                       setTimeGap(setting.timeGap);
                       await safeCreateOrUpdatePlayer1(setting.videoId1 || '');
                       await safeCreateOrUpdatePlayer2(setting.videoId2 || '');
-                      resyncPlayers();
+                      setTimeout(() => {
+                        const p1 = player1();
+                        if (p1) p1.playVideo();
+                        // player2는 playVideo()를 직접 호출하지 않음
+                      }, 1000);
                     }}
                   >
                     <div class="setting-name">{setting.name}</div>
