@@ -23,14 +23,16 @@ const App: () => JSX.Element = () => {
             'margin-bottom': '10px',
           }}
         >
-          [유튜브 영상 싱크를 맞춰요!]
+          유튜브 영상 싱크를 맞춰요!
         </h2>
         <p style={{ 'margin-bottom': '16px', 'line-height': 1.6 }}>
-          유튜브프리미엄을 사용하면서, 악기연주를 하는 사람을 위한 서비스입니다.
+          유튜브를 통해 악기 연주를 하는 사람을 위한 서비스입니다.
           <br />
           <b>[화면용 영상]</b>에서는 악보가 있는 영상을,
           <br />
           <b>[소리용 영상]</b>에서는 음원이 포함된 영상링크를 넣으면 됩니다.
+          <br />
+          유튜브 프리미엄을 쓰면서 광고를 보지 않는 사람을 기준으로 만들어졌습니다.
         </p>
 
         <h3
@@ -84,7 +86,6 @@ const App: () => JSX.Element = () => {
         <div
           style={{
             color: 'var(--theme-accent)',
-            'font-size': '1.05em',
             'font-weight': 700,
             'margin-bottom': '18px',
             padding: '14px',
@@ -94,8 +95,12 @@ const App: () => JSX.Element = () => {
             'box-shadow': '0 2px 8px 0 rgba(255,79,163,0.08)',
           }}
         >
-          💡 Tip: 유튜브 링크 또는 ID가 올바르게 복사된 상태라면, 화면상에서 <b>'붙여넣기'</b>{' '}
-          버튼이 나옵니다.
+          💡 유튜브 링크 또는 ID가 복사된 경우 <b>'붙여넣기'</b> 버튼이 나타납니다.
+          <br />
+          <span style={{ color: 'var(--theme-text)', 'font-weight': 500, 'font-size': '0.97em' }}>
+            권한이 거부된 경우, 크롬에서는 [우측 상단 메뉴]-[설정]-[사이트 설정]에서 허용상태로
+            변경할 수 있습니다.
+          </span>
         </div>
 
         <h3
@@ -110,7 +115,8 @@ const App: () => JSX.Element = () => {
         </h3>
         <ul style={{ 'padding-left': '20px', 'margin-bottom': '16px' }}>
           <li>
-            <b>영상 싱크:</b> 두 유튜브 영상을 동시에 재생/정지/이동할 수 있습니다.
+            <b>영상 싱크:</b> [화면용 영상]의 재생시간이 변경되면 [소리용 영상]도 자동으로
+            동기화됩니다.
           </li>
           <li>
             <b>레이아웃 전환:</b> 우상단 아이콘 버튼으로 [기본보기]와 [화면용 영상만 보기]를 전환할
@@ -123,21 +129,6 @@ const App: () => JSX.Element = () => {
             <b>볼륨 조절:</b> 영상 하단의 흰색 슬라이더로 소리용 영상 볼륨을 조절할 수 있습니다.
           </li>
         </ul>
-
-        <div
-          style={{
-            color: 'var(--theme-text-muted)',
-            'font-size': '0.98em',
-            'margin-top': '20px',
-            padding: '12px',
-            background: 'var(--theme-panel)',
-            'border-radius': '8px',
-          }}
-        >
-          <b>💡 Tip:</b> 유튜브 링크 또는 ID가 올바르게 복사된 상태라면, 화면상에서 '붙여넣기'
-          버튼이 나옵니다.
-        </div>
-
         <div
           style={{
             'margin-top': '24px',
