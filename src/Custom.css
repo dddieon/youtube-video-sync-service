@@ -692,3 +692,13 @@ input[type='number'] {
   text-align: center;
   padding: 0 16px;
 }
+
+.discord-volume-bg {
+  background: #23272aee;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px 0 #181a1b44;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

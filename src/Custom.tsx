@@ -5,6 +5,7 @@ import Slider from './components/Slider';
 import VolumeSlider from './components/VolumeSlider';
 import VolumeKnob from './components/VolumeKnob';
 import DiscordVolumeControl from './components/DiscordVolumeControl';
+import DiscordVideoActionButtons from './components/DiscordVideoActionButtons';
 
 interface VideoSettings {
   id: string;
@@ -492,29 +493,6 @@ function YoutubePlayer() {
 
       <div class="main-content">
         <div
-          class="layout-controls"
-          style={{ display: 'flex', gap: '12px', 'margin-bottom': '24px', 'align-items': 'center' }}
-        >
-          <button class="fullscreen-btn" onClick={handleFullscreen}>
-            <span class="icon">
-              <FullscreenIcon />
-            </span>
-            전체화면으로
-          </button>
-          <button
-            class={layoutMode() === 'equal' ? 'layout-btn active' : 'layout-btn'}
-            onClick={() => setLayoutMode('equal')}
-          >
-            기본보기
-          </button>
-          <button
-            class={layoutMode() === 'main-only' ? 'layout-btn active' : 'layout-btn'}
-            onClick={() => setLayoutMode('main-only')}
-          >
-            화면용 영상만
-          </button>
-        </div>
-        <div
           class={
             layoutMode() === 'main-only'
               ? 'video-layout main-only'
@@ -545,6 +523,13 @@ function YoutubePlayer() {
                     )}
                   </div>
                 )}
+                <DiscordVideoActionButtons
+                  mode={layoutMode() === 'main-only' ? 'main-only' : 'equal'}
+                  onToggleLayout={() =>
+                    setLayoutMode(layoutMode() === 'main-only' ? 'equal' : 'main-only')
+                  }
+                  onFullscreen={handleFullscreen}
+                />
               </div>
             </div>
             <div

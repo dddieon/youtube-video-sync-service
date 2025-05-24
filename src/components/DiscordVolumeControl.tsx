@@ -27,6 +27,7 @@ function VolumeIcon() {
 export default function DiscordVolumeControl(props: DiscordVolumeControlProps): JSX.Element {
   return (
     <div
+      class="discord-volume-bg"
       style={{
         display: 'flex',
         'align-items': 'center',
@@ -35,8 +36,6 @@ export default function DiscordVolumeControl(props: DiscordVolumeControlProps): 
         left: '16px',
         bottom: '16px',
         'z-index': 10,
-        background: 'none',
-        padding: 0,
       }}
     >
       <span style={{ display: 'flex', 'align-items': 'center', height: '22px' }}>
