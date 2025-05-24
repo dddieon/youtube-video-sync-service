@@ -21,6 +21,11 @@ declare global {
       Player: new (_elementId: string, _options: any) => any;
       PlayerState: {
         PLAYING: number;
+        PAUSED: number;
+        ENDED: number;
+        BUFFERING: number;
+        CUED: number;
+        UNSTARTED: number;
       };
     };
     onYouTubeIframeAPIReady?: () => void;
@@ -95,6 +100,22 @@ const SettingsIcon = () => (
   </svg>
 );
 
+const LockIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    fill="none"
+    stroke={iconStroke}
+    stroke-width={iconStrokeWidth}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    viewBox="0 0 24 24"
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
 function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
   const [player2, setPlayer2] = createSignal<any>(null);
@@ -145,6 +166,53 @@ function YoutubePlayer() {
     createOrUpdatePlayer2(videoId);
   }
 
+  // video1(화면용)에서 pause 이벤트 발생 시, 사용자가 직접 멈춘 경우만 동기화
+  const onPlayerStateChange = (event: { data: number }) => {
+    if (event.data === window.YT!.PlayerState.PAUSED && !isSyncing()) {
+      // video1이 pause되면 video2도 pause (자동정지 없음, 명시적 조작만 동기화)
+      if (player2() && player2().getPlayerState() !== window.YT!.PlayerState.PAUSED) {
+        player2().pauseVideo();
+      }
+    }
+  };
+
+  // video2(소리용)에서는 이벤트 핸들링을 하지 않음
+  const onPlayerStateChange2 = () => {
+    // 소리용 영상은 이벤트 핸들링을 하지 않음
+  };
+
+  // 싱크 함수: pause/play 호출 없이 seekTo만 수행
+  const syncPlayers = (sourcePlayer: any, targetPlayer: any, timeDiff: number) => {
+    setIsSyncing(true);
+    const currentTime = sourcePlayer.getCurrentTime();
+    const seekTime = currentTime + timeDiff;
+    if (targetPlayer) {
+      const currentState = targetPlayer.getPlayerState();
+      targetPlayer.seekTo(seekTime > 0 ? seekTime : 0, true); // 재생상태 유지
+      // 재생 상태가 일시정지가 아닌 경우에만 재생 상태 유지
+      if (currentState !== window.YT!.PlayerState.PAUSED) {
+        targetPlayer.playVideo();
+      }
+    }
+    setTimeout(() => setIsSyncing(false), 1000);
+  };
+
+  // 화면용 영상의 시간 변경 감지 및 동기화
+  const onPlayerReady = (event: any) => {
+    const player = event.target;
+    player.addEventListener('onStateChange', (e: any) => {
+      if (e.data === window.YT!.PlayerState.PLAYING) {
+        // 재생 시작 시 소리용 영상 동기화
+        const currentTime = player.getCurrentTime();
+        const gap = timeGap();
+        if (player2()) {
+          player2().seekTo(currentTime + gap, true);
+          player2().playVideo();
+        }
+      }
+    });
+  };
+
   async function createOrUpdatePlayer1(videoId: string) {
     const el = document.getElementById('youtube-player-1');
     if (!el) return;
@@ -157,7 +225,10 @@ function YoutubePlayer() {
       width: '560',
       playerVars: { mute: 1, enablejsapi: 1, origin: window.location.origin },
       events: {
-        onReady: () => instance.loadVideoById(videoId),
+        onReady: (e) => {
+          instance.loadVideoById(videoId);
+          onPlayerReady(e);
+        },
         onStateChange: onPlayerStateChange,
         onError: () => setVideo1Error('화면용 영상 링크 올바르지 않음'),
       },
@@ -175,55 +246,25 @@ function YoutubePlayer() {
     const instance = new window.YT!.Player('youtube-player-2', {
       height: '315',
       width: '560',
-      playerVars: { mute: 0, enablejsapi: 1, origin: window.location.origin },
+      playerVars: {
+        mute: 0,
+        enablejsapi: 1,
+        origin: window.location.origin,
+        controls: 0, // 컨트롤 비활성화
+        disablekb: 1, // 키보드 단축키 비활성화
+        fs: 0, // 전체화면 버튼 비활성화
+        rel: 0, // 관련 동영상 비활성화
+        showinfo: 0, // 동영상 정보 비활성화
+        modestbranding: 1, // YouTube 로고 최소화
+      },
       events: {
         onReady: () => instance.loadVideoById(videoId),
-        onStateChange: onPlayerStateChange2,
+        onStateChange: () => {}, // 이벤트 핸들링 제거
         onError: () => setVideo2Error('소리용 영상 링크 올바르지 않음'),
       },
     });
     setPlayer2(instance);
   }
-
-  // 현재 재생 중인 영상들의 싱크를 다시 맞추는 함수
-  const resyncPlayers = () => {
-    const player1Instance = player1();
-    const player2Instance = player2();
-
-    if (!player1Instance || !player2Instance) return;
-
-    const player1State = player1Instance.getPlayerState();
-    const player2State = player2Instance.getPlayerState();
-
-    // 두 플레이어가 모두 재생 중인 경우에만 싱크를 맞춤
-    if (
-      player1State === window.YT!.PlayerState.PLAYING &&
-      player2State === window.YT!.PlayerState.PLAYING
-    ) {
-      const gap = timeGap();
-      // 화면용 영상의 현재 시간을 기준으로 소리용 영상의 시간을 조정
-      const currentTime = player1Instance.getCurrentTime();
-      const targetTime = currentTime + gap;
-
-      // 소리용 영상의 재생을 일시 중지
-      player2Instance.pauseVideo();
-
-      if (targetTime < 0) {
-        // 음수 시간으로 시작해야 하는 경우
-        player2Instance.seekTo(0);
-        setTimeout(
-          () => {
-            player1Instance.seekTo(Math.abs(targetTime));
-            player2Instance.playVideo();
-          },
-          Math.abs(targetTime) * 1000,
-        );
-      } else {
-        player2Instance.seekTo(targetTime);
-        player2Instance.playVideo();
-      }
-    }
-  };
 
   // 로컬 스토리지에서 설정 목록 불러오기
   const loadSettingsList = () => {
@@ -270,57 +311,6 @@ function YoutubePlayer() {
     }
   });
 
-  const onPlayerStateChange = (event: { data: number }) => {
-    if (event.data === window.YT!.PlayerState.PLAYING && !isSyncing()) {
-      const gap = timeGap();
-      if (gap < 0) {
-        // 음수 간격일 때는 소리용 영상이 먼저 재생
-        syncPlayers(player2(), player1(), Math.abs(gap));
-      } else {
-        syncPlayers(player1(), player2(), -gap);
-      }
-    }
-  };
-
-  const onPlayerStateChange2 = (event: { data: number }) => {
-    if (event.data === window.YT!.PlayerState.PLAYING && !isSyncing()) {
-      const gap = timeGap();
-      if (gap < 0) {
-        // 음수 간격일 때는 화면용 영상이 나중에 재생
-        syncPlayers(player1(), player2(), -Math.abs(gap));
-      } else {
-        syncPlayers(player2(), player1(), gap + 0.25);
-      }
-    }
-  };
-
-  const syncPlayers = (sourcePlayer: any, targetPlayer: any, timeDiff: number) => {
-    setIsSyncing(true);
-    const currentTime = sourcePlayer.getCurrentTime();
-    const seekTime = currentTime + timeDiff;
-
-    // 소리용 영상(플레이어2)의 재생을 일시 중지
-    player2().pauseVideo();
-
-    if (seekTime < 0) {
-      // 음수 시간으로 시작해야 하는 경우
-      targetPlayer.seekTo(0);
-      setTimeout(
-        () => {
-          sourcePlayer.seekTo(Math.abs(seekTime));
-          // 소리용 영상 재생 시작
-          player2().playVideo();
-        },
-        Math.abs(seekTime) * 1000,
-      );
-    } else {
-      targetPlayer.seekTo(seekTime);
-      // 소리용 영상 재생 시작
-      player2().playVideo();
-    }
-    setTimeout(() => setIsSyncing(false), 1000);
-  };
-
   // 전체화면 핸들러: 화면용 영상(main-video) 전체화면
   function handleFullscreen() {
     const el = document.getElementById('youtube-player-1');
@@ -336,7 +326,7 @@ function YoutubePlayer() {
       alert('화면용과 소리용 영상 ID를 모두 입력해주세요.');
       return;
     }
-    const name = window.prompt('설정 이름을 입력하세요');
+    const name = window.prompt('저장할 설정 이름을 입력하세요');
     if (name && name.trim() !== '') {
       setSettingName(name.trim());
       saveSettings();
@@ -429,6 +419,12 @@ function YoutubePlayer() {
                   <VolumeIcon />
                 </span>
                 소리용 영상
+                <span class="control-hint">
+                  <span class="icon">
+                    <LockIcon />
+                  </span>
+                  화면용 영상만 컨트롤 가능합니다
+                </span>
               </div>
               {videoId2() === '' ? (
                 <div class="video-skeleton">소리용 영상 링크 필요</div>
@@ -516,7 +512,7 @@ function YoutubePlayer() {
                     class="slider-text-btn"
                     onClick={() => setIsDirectInput((v) => !v)}
                   >
-                    {isDirectInput() ? '슬라이더로 입력할래요?' : '직접 입력하고 싶나요?'}
+                    {isDirectInput() ? '슬라이더로' : '직접 입력'}
                   </button>
                 </div>
               ) : (
@@ -525,7 +521,7 @@ function YoutubePlayer() {
                     value={timeGap()}
                     onChange={(v) => {
                       setTimeGap(v);
-                      resyncPlayers();
+                      syncPlayers(player1(), player2(), v - timeGap());
                     }}
                     min={-60}
                     max={60}
@@ -540,7 +536,7 @@ function YoutubePlayer() {
                       class="slider-text-btn"
                       onClick={() => setIsDirectInput((v) => !v)}
                     >
-                      {isDirectInput() ? '슬라이더로 입력할래요?' : '직접 입력하고 싶나요?'}
+                      {isDirectInput() ? '슬라이더로 돌아가기' : '직접 입력'}
                     </button>
                     <span class="sliderDirectionHintRight">소리가 빠르면 오른쪽 →</span>
                   </div>
