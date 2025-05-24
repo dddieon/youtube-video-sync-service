@@ -257,11 +257,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
   background: #444851;
   color: var(--theme-text-muted);
   font-size: 1.1em;
-  border: 1px solid var(--theme-border);
 }
 .video-skeleton.error {
   background: #3a2323;
@@ -278,8 +276,6 @@ body {
   justify-content: center;
   align-items: center;
   display: flex;
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
   transition: background 0.18s;
 }
 
