@@ -100,35 +100,19 @@ const SettingsIcon = () => (
   </svg>
 );
 
-const LockIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    fill="none"
-    stroke={iconStroke}
-    stroke-width={iconStrokeWidth}
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    viewBox="0 0 24 24"
-  >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-
 function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
   const [player2, setPlayer2] = createSignal<any>(null);
   const [timeGap, setTimeGap] = createSignal(5);
   const [videoId1, setVideoId1] = createSignal('');
   const [videoId2, setVideoId2] = createSignal('');
-  const [isSyncing, setIsSyncing] = createSignal(false);
   const [savedSettings, setSavedSettings] = createSignal<VideoSettings[]>([]);
   const [settingName, setSettingName] = createSignal('');
   const [isEditingSlider, setIsEditingSlider] = createSignal(false);
   const [isDirectInput, setIsDirectInput] = createSignal(false);
   const [video1Error, setVideo1Error] = createSignal('');
   const [video2Error, setVideo2Error] = createSignal('');
+  const [layoutMode, setLayoutMode] = createSignal<'default' | 'main-only' | 'equal'>('default');
 
   const EXAMPLE_SETTING = {
     id: 'example',
@@ -166,35 +150,28 @@ function YoutubePlayer() {
     createOrUpdatePlayer2(videoId);
   }
 
-  // video1(화면용)에서 pause 이벤트 발생 시, 사용자가 직접 멈춘 경우만 동기화
-  const onPlayerStateChange = (event: { data: number }) => {
-    if (event.data === window.YT!.PlayerState.PAUSED && !isSyncing()) {
-      // video1이 pause되면 video2도 pause (자동정지 없음, 명시적 조작만 동기화)
-      if (player2() && player2().getPlayerState() !== window.YT!.PlayerState.PAUSED) {
-        player2().pauseVideo();
-      }
+  // 현재 재생 중인 영상들의 싱크를 다시 맞추는 함수 (첨부 코드)
+  const resyncPlayers = () => {
+    const player1Instance = player1();
+    const player2Instance = player2();
+    if (!player1Instance || !player2Instance) return;
+    const gap = timeGap();
+    const currentTime = player1Instance.getCurrentTime();
+    const targetTime = currentTime + gap;
+    player2Instance.pauseVideo();
+    if (targetTime < 0) {
+      player2Instance.seekTo(0);
+      setTimeout(
+        () => {
+          player1Instance.seekTo(Math.abs(targetTime));
+          player2Instance.playVideo();
+        },
+        Math.abs(targetTime) * 1000,
+      );
+    } else {
+      player2Instance.seekTo(targetTime);
+      player2Instance.playVideo();
     }
-  };
-
-  // video2(소리용)에서는 이벤트 핸들링을 하지 않음
-  const onPlayerStateChange2 = () => {
-    // 소리용 영상은 이벤트 핸들링을 하지 않음
-  };
-
-  // 싱크 함수: pause/play 호출 없이 seekTo만 수행
-  const syncPlayers = (sourcePlayer: any, targetPlayer: any, timeDiff: number) => {
-    setIsSyncing(true);
-    const currentTime = sourcePlayer.getCurrentTime();
-    const seekTime = currentTime + timeDiff;
-    if (targetPlayer) {
-      const currentState = targetPlayer.getPlayerState();
-      targetPlayer.seekTo(seekTime > 0 ? seekTime : 0, true); // 재생상태 유지
-      // 재생 상태가 일시정지가 아닌 경우에만 재생 상태 유지
-      if (currentState !== window.YT!.PlayerState.PAUSED) {
-        targetPlayer.playVideo();
-      }
-    }
-    setTimeout(() => setIsSyncing(false), 1000);
   };
 
   // 화면용 영상의 시간 변경 감지 및 동기화
@@ -225,11 +202,11 @@ function YoutubePlayer() {
       width: '560',
       playerVars: { mute: 1, enablejsapi: 1, origin: window.location.origin },
       events: {
-        onReady: (e) => {
+        onReady: (e: any) => {
           instance.loadVideoById(videoId);
           onPlayerReady(e);
         },
-        onStateChange: onPlayerStateChange,
+        onStateChange: () => {},
         onError: () => setVideo1Error('화면용 영상 링크 올바르지 않음'),
       },
     });
@@ -355,6 +332,7 @@ function YoutubePlayer() {
                       setTimeGap(setting.timeGap);
                       await safeCreateOrUpdatePlayer1(setting.videoId1 || '');
                       await safeCreateOrUpdatePlayer2(setting.videoId2 || '');
+                      resyncPlayers();
                     }}
                   >
                     <div class="setting-name">{setting.name}</div>
@@ -386,7 +364,38 @@ function YoutubePlayer() {
       </div>
 
       <div class="main-content">
-        <div class="video-layout">
+        <div
+          class="layout-controls"
+          style={{ display: 'flex', gap: '12px', 'margin-bottom': '24px', 'align-items': 'center' }}
+        >
+          <button class="fullscreen-btn" onClick={handleFullscreen}>
+            <span class="icon">
+              <FullscreenIcon />
+            </span>
+            전체화면으로
+          </button>
+          <button
+            class={layoutMode() === 'main-only' ? 'layout-btn active' : 'layout-btn'}
+            onClick={() => setLayoutMode('main-only')}
+          >
+            크게보기 (소리용 영상 가리기)
+          </button>
+          <button
+            class={layoutMode() === 'equal' ? 'layout-btn active' : 'layout-btn'}
+            onClick={() => setLayoutMode('equal')}
+          >
+            1:1로 보기
+          </button>
+        </div>
+        <div
+          class={
+            layoutMode() === 'main-only'
+              ? 'video-layout main-only'
+              : layoutMode() === 'equal'
+                ? 'video-layout equal'
+                : 'video-layout'
+          }
+        >
           <div class="main-video-area">
             <div class="main-video-block">
               <div class="video-label">
@@ -396,40 +405,37 @@ function YoutubePlayer() {
                 화면용 영상
               </div>
               {videoId1() === '' ? (
-                <div class="video-skeleton">화면용 영상 링크 필요</div>
+                <div class="video-skeleton preview">
+                  <span class="preview-icon">🖥️</span>
+                  <span class="preview-text">ID를 입력하세요</span>
+                </div>
               ) : video1Error() ? (
                 <div class="video-skeleton error">{video1Error()}</div>
               ) : (
                 <div id="youtube-player-1" class="main-video" />
               )}
-              <button
-                class="fullscreen-btn"
-                onClick={handleFullscreen}
-                disabled={!videoId1() || !!video1Error()}
-              >
-                <span class="icon">
-                  <FullscreenIcon />
-                </span>
-                전체화면으로
-              </button>
             </div>
-            <div class="sub-video-area">
+            <div
+              class={
+                layoutMode() === 'main-only' ? 'sub-video-area visually-hidden' : 'sub-video-area'
+              }
+            >
               <div class="video-label">
                 <span class="icon">
                   <VolumeIcon />
                 </span>
                 소리용 영상
-                <span class="control-hint">
-                  <span class="icon">
-                    <LockIcon />
-                  </span>
-                  화면용 영상만 컨트롤 가능합니다
-                </span>
               </div>
               {videoId2() === '' ? (
-                <div class="video-skeleton">소리용 영상 링크 필요</div>
+                <div class="video-skeleton preview">
+                  <span class="preview-icon">🔈</span>
+                  <span class="preview-text">ID를 입력하세요</span>
+                </div>
               ) : video2Error() ? (
-                <div class="video-skeleton error">{video2Error()}</div>
+                <div class="video-skeleton error">
+                  <span class="preview-icon">❌</span>
+                  <span class="preview-text">{video2Error()}</span>
+                </div>
               ) : (
                 <div id="youtube-player-2" class="sub-video" />
               )}
@@ -452,6 +458,7 @@ function YoutubePlayer() {
                     const newId = e.currentTarget.value;
                     setVideoId1(newId);
                     await safeCreateOrUpdatePlayer1(newId);
+                    resyncPlayers();
                   }}
                 />
               </div>
@@ -469,6 +476,7 @@ function YoutubePlayer() {
                     const newId = e.currentTarget.value;
                     setVideoId2(newId);
                     await safeCreateOrUpdatePlayer2(newId);
+                    resyncPlayers();
                   }}
                 />
               </div>
@@ -521,7 +529,7 @@ function YoutubePlayer() {
                     value={timeGap()}
                     onChange={(v) => {
                       setTimeGap(v);
-                      syncPlayers(player1(), player2(), v - timeGap());
+                      resyncPlayers();
                     }}
                     min={-60}
                     max={60}
