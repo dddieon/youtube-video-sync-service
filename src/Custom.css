@@ -764,6 +764,7 @@ input[type='number'] {
   border-radius: 4px;
   cursor: pointer;
   margin-top: 16px;
+  font-weight: 600;
 }
 
 .save-btn:hover {

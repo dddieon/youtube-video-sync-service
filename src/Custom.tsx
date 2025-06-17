@@ -216,6 +216,11 @@ function YoutubePlayer() {
       return;
     }
 
+    // 재생 구간 이동 시에는 에러를 발생시키지 않음
+    if (event.data === window.YT!.PlayerState.BUFFERING) {
+      return;
+    }
+
     if (syncTimeout) {
       console.log('[SYNC] 기존 타이머 clear');
       clearTimeout(syncTimeout);
@@ -270,12 +275,16 @@ function YoutubePlayer() {
     const player2Instance = player2();
     if (!player2Instance) return;
 
+    // 재생 구간 이동 시에는 에러를 발생시키지 않음
+    if (event.data === window.YT!.PlayerState.BUFFERING) {
+      return;
+    }
+
     // gap 타이머 끝나기 전 PLAYING 상태면 무조건 멈춤
     if (!allowSoundPlay && event.data === window.YT!.PlayerState.PLAYING) {
       console.log('[SYNC] 소리용 영상이 gap 대기 중인데 PLAYING 상태! 강제 pause');
       player2Instance.pauseVideo();
     }
-    // 소리용 영상에서 발생하는 다른 이벤트는 무시 (싱크 트리거 X)
   };
 
   async function createOrUpdatePlayer1(videoId: string) {
@@ -288,6 +297,7 @@ function YoutubePlayer() {
     const instance = new window.YT!.Player('youtube-player-1', {
       height: '315',
       width: '560',
+      videoId: videoId,
       playerVars: {
         mute: 1,
         enablejsapi: 1,
@@ -298,7 +308,6 @@ function YoutubePlayer() {
       },
       events: {
         onReady: () => {
-          instance.cueVideoById(videoId);
           setTimeout(() => {
             instance.pauseVideo();
           }, 100);
@@ -320,6 +329,7 @@ function YoutubePlayer() {
     const instance = new window.YT!.Player('youtube-player-2', {
       height: '315',
       width: '560',
+      videoId: videoId,
       playerVars: {
         mute: 0,
         enablejsapi: 1,
@@ -336,7 +346,6 @@ function YoutubePlayer() {
       },
       events: {
         onReady: () => {
-          instance.cueVideoById(videoId);
           setTimeout(() => {
             instance.pauseVideo();
           }, 100);
