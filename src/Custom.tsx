@@ -504,6 +504,8 @@ function YoutubePlayer() {
                       setVideoId1(setting.videoId1 || '');
                       setVideoId2(setting.videoId2 || '');
                       setTimeGap(setting.timeGap);
+                      setVideo1Error('');
+                      setVideo2Error('');
                       await safeCreateOrUpdatePlayer1(setting.videoId1 || '');
                       await safeCreateOrUpdatePlayer2(setting.videoId2 || '');
                       setTimeout(() => {
