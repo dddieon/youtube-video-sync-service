@@ -160,10 +160,10 @@ function YoutubePlayer() {
 
   const EXAMPLE_SETTING = {
     id: 'example',
-    videoId1: 'F4IKWKH9oyg',
-    videoId2: '5jsdarfpsLk',
-    timeGap: 5,
-    name: '예제(기본)',
+    videoId1: 'J3BxBYjo0dc',
+    videoId2: 'ic8j13piAhQ',
+    timeGap: 12.65,
+    name: 'Example',
     createdAt: 0,
   };
 
