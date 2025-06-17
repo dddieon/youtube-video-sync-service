@@ -553,6 +553,31 @@ function YoutubePlayer() {
                   <MonitorIcon />
                 </span>
                 화면용 영상
+                <button
+                  class="icon-button"
+                  onClick={async () => {
+                    setVideo1Error('');
+                    setVideo2Error('');
+                    await safeCreateOrUpdatePlayer1(videoId1());
+                    await safeCreateOrUpdatePlayer2(videoId2());
+                    resyncPlayers();
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                </button>
               </div>
               <div class="main-video video-wrapper">
                 <div id="youtube-player-1" class="youtube-player" />
@@ -582,11 +607,30 @@ function YoutubePlayer() {
                 layoutMode() === 'main-only' ? 'sub-video-area visually-hidden' : 'sub-video-area'
               }
             >
-              <div class="video-label" style={{ display: 'flex', 'align-items': 'center' }}>
-                <span class="icon">
-                  <VolumeIcon />
-                </span>
-                소리용 영상
+              <div class="video-label">
+                <span>소리용 영상</span>
+                <button
+                  class="icon-button"
+                  onClick={() => {
+                    setVideo2Error('');
+                    safeCreateOrUpdatePlayer2(videoId2());
+                    resyncPlayers();
+                  }}
+                  title="새로고침"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
               </div>
               <div
                 class="sub-video video-wrapper"
