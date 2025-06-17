@@ -106,6 +106,23 @@ const SettingsIcon = () => (
   </svg>
 );
 
+const MenuIcon = () => (
+  <svg
+    width="24"
+    height="24"
+    fill="none"
+    stroke={iconStroke}
+    stroke-width={iconStrokeWidth}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    viewBox="0 0 24 24"
+  >
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+
 function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
   const [player2, setPlayer2] = createSignal<any>(null);
@@ -121,6 +138,7 @@ function YoutubePlayer() {
   const [layoutMode, setLayoutMode] = createSignal<'default' | 'main-only' | 'equal'>('default');
   const [volume, setVolume] = createSignal(100);
   const [showVolume, setShowVolume] = createSignal(false);
+  const [isSidebarOpen, setIsSidebarOpen] = createSignal(false);
 
   const EXAMPLE_SETTING = {
     id: 'example',
@@ -438,7 +456,13 @@ function YoutubePlayer() {
 
   return (
     <div class="app-container">
-      <div class="sidebar">
+      <div class="mobile-header">
+        <button class="mobile-menu-button" onClick={() => setIsSidebarOpen(!isSidebarOpen())}>
+          <MenuIcon />
+        </button>
+        <div class="app-title">Youtube Syncer</div>
+      </div>
+      <div class={`sidebar ${isSidebarOpen() ? 'open' : ''}`}>
         <h2 class="title">
           <span class="icon">
             <SettingsIcon />
@@ -461,8 +485,8 @@ function YoutubePlayer() {
                       setTimeout(() => {
                         const p1 = player1();
                         if (p1) p1.playVideo();
-                        // player2는 playVideo()를 직접 호출하지 않음
                       }, 1000);
+                      setIsSidebarOpen(false);
                     }}
                   >
                     <div class="setting-name">{setting.name}</div>
@@ -487,10 +511,10 @@ function YoutubePlayer() {
               )}
             </For>
           </div>
-          <button class="save-btn" onClick={handleSaveBtnClick}>
-            현재 설정 저장
-          </button>
         </div>
+        <button class="save-btn" onClick={handleSaveBtnClick}>
+          현재 설정 저장
+        </button>
       </div>
 
       <div class="main-content">
@@ -695,6 +719,29 @@ function YoutubePlayer() {
           </div>
         </div>
       </div>
+
+      <button
+        class="help-fab-btn"
+        onClick={() => {
+          const helpUrl = 'https://github.com/jiwondev/youtube-video-sync-service';
+          window.open(helpUrl, '_blank');
+        }}
+      >
+        <svg
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      </button>
     </div>
   );
 }
