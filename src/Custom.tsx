@@ -232,7 +232,8 @@ function YoutubePlayer() {
   };
 
   // 시간 간격 변경 시 싱크 맞추기
-  function syncTimeGap() {
+  function syncTimeGap(newGap: number) {
+    setTimeGap(newGap);
     resyncPlayers();
   }
 
@@ -733,19 +734,41 @@ function YoutubePlayer() {
             >
               <div style={{ display: 'flex', 'align-items': 'center', gap: '0' }}>
                 <input
-                  type="number"
-                  step={0.01}
-                  value={timeGap()}
+                  type="text"
+                  value={timeGap().toString()}
                   onInput={(e) => {
-                    const val = e.currentTarget.value;
-                    if (val === '' || val === '-') {
+                    const input = e.target as HTMLInputElement;
+                    const value = input.value;
+
+                    // 빈 문자열이면 0으로 설정
+                    if (value === '') {
                       setTimeGap(0);
+                      syncTimeGap(0);
                       return;
                     }
-                    const v = Number(val);
-                    if (!isNaN(v)) {
-                      setTimeGap(v);
-                      syncTimeGap();
+
+                    // 숫자와 소수점, 마이너스 기호만 허용
+                    if (!/^-?\d*\.?\d*$/.test(value)) {
+                      return;
+                    }
+
+                    // 마지막 문자가 소수점이면 그대로 유지
+                    if (value.endsWith('.')) {
+                      setTimeGap(parseFloat(value) || 0);
+                      return;
+                    }
+
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setTimeGap(numValue);
+                      syncTimeGap(numValue);
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = parseFloat(e.currentTarget.value);
+                    if (!isNaN(value)) {
+                      setTimeGap(value);
+                      syncTimeGap(value);
                     }
                   }}
                   class="time-gap-input"
@@ -765,7 +788,7 @@ function YoutubePlayer() {
                   value={timeGap()}
                   onChange={(v) => {
                     setTimeGap(v);
-                    syncTimeGap();
+                    syncTimeGap(v);
                   }}
                   min={-60}
                   max={60}
