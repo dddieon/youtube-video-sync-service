@@ -123,6 +123,24 @@ const MenuIcon = () => (
   </svg>
 );
 
+function XIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
 function YoutubePlayer() {
   const [player1, setPlayer1] = createSignal<any>(null);
   const [player2, setPlayer2] = createSignal<any>(null);
@@ -366,20 +384,29 @@ function YoutubePlayer() {
   };
 
   // 설정 저장하기
-  const saveSettings = () => {
-    const newSetting: VideoSettings = {
-      id: Date.now().toString(),
-      videoId: videoId1(),
-      timeGap: timeGap(),
-      name: settingName() || `설정 ${savedSettings().length + 1}`,
-      createdAt: Date.now(),
-    };
+  function handleSaveBtnClick() {
+    if (!videoId1() || !videoId2()) {
+      alert('화면용과 소리용 영상 ID를 모두 입력해주세요.');
+      return;
+    }
+    const name = window.prompt('저장할 설정 이름을 입력하세요');
+    if (name && name.trim() !== '') {
+      setSettingName(name.trim());
+      const newSetting: VideoSettings = {
+        id: Date.now().toString(),
+        videoId1: videoId1(),
+        videoId2: videoId2(),
+        timeGap: timeGap(),
+        name: name.trim(),
+        createdAt: Date.now(),
+      };
 
-    const updatedSettings = [...savedSettings(), newSetting];
-    setSavedSettings(updatedSettings);
-    localStorage.setItem('videoSettingsList', JSON.stringify(updatedSettings));
-    setSettingName('');
-  };
+      const updatedSettings = [...savedSettings(), newSetting];
+      setSavedSettings(updatedSettings);
+      localStorage.setItem('videoSettingsList', JSON.stringify(updatedSettings));
+      setSettingName('');
+    }
+  }
 
   // 설정 삭제하기
   const deleteSetting = (id: string) => {
@@ -409,18 +436,6 @@ function YoutubePlayer() {
       el.requestFullscreen();
     } else if (el && (el as any).webkitRequestFullscreen) {
       (el as any).webkitRequestFullscreen();
-    }
-  }
-
-  function handleSaveBtnClick() {
-    if (!videoId1() || !videoId2()) {
-      alert('화면용과 소리용 영상 ID를 모두 입력해주세요.');
-      return;
-    }
-    const name = window.prompt('저장할 설정 이름을 입력하세요');
-    if (name && name.trim() !== '') {
-      setSettingName(name.trim());
-      saveSettings();
     }
   }
 
@@ -500,20 +515,14 @@ function YoutubePlayer() {
                   >
                     <div class="setting-name">{setting.name}</div>
                     <div class="setting-details">
-                      {setting.id === 'example' ? (
-                        <>
-                          <span>화면용: {setting.videoId1}</span>
-                          <span>소리용: {setting.videoId2}</span>
-                        </>
-                      ) : (
-                        <span>ID: {setting.videoId1 ?? ''}</span>
-                      )}
+                      <span>화면용: {setting.videoId1}</span>
+                      <span>소리용: {setting.videoId2}</span>
                       <span>간격: {setting.timeGap}초</span>
                     </div>
                   </div>
                   {setting.id !== 'example' && (
                     <button class="delete-btn" onClick={() => deleteSetting(setting.id)}>
-                      삭제
+                      <XIcon />
                     </button>
                   )}
                 </div>
