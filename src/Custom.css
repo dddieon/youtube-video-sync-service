@@ -716,16 +716,6 @@ input[type='number'] {
   display: none;
 }
 
-.video-layout.equal .main-video-area {
-  flex-direction: row;
-}
-.video-layout.equal .main-video-block,
-.video-layout.equal .sub-video-area {
-  flex: 1 1 50%;
-  min-width: 0;
-  max-width: 50%;
-}
-
 .video-layout {
   display: flex;
   flex-direction: row;
