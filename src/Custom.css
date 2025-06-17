@@ -206,7 +206,6 @@ body {
 .main-video-block,
 .sub-video-area {
   flex: 1;
-  min-width: 320px;
   display: flex;
   flex-direction: column;
 }
@@ -435,7 +434,6 @@ body {
 
 .main-video-area {
   display: flex;
-  flex-direction: column;
   gap: 16px;
   flex: 1;
   min-height: 0;
@@ -737,13 +735,12 @@ input[type='number'] {
 
 .main-video-area {
   display: flex;
-  flex-direction: row;
   gap: 16px;
   flex: 1;
 }
 
 .main-video-block {
-  flex: 2;
+  flex: 1;
 }
 
 .sub-video-area {
@@ -918,6 +915,21 @@ input[type='number'] {
   .main-video-block,
   .sub-video-area {
     width: 100%;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .main-video,
+  .sub-video {
+    width: 100%;
+  }
+
+  .video-wrapper {
+    width: 100%;
+  }
+
+  .youtube-player {
+    width: 100%;
   }
 
   .settings-panel {
@@ -1068,6 +1080,10 @@ input[type='number'] {
 }
 
 @media (max-width: 640px) {
+  .main-video-area {
+    flex-direction: column;
+  }
+
   .help-modal {
     right: 40px;
     bottom: 120px;

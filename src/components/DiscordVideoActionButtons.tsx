@@ -71,18 +71,16 @@ function IconButton(props: {
   return (
     <button
       style={{
-        background: '#23272a',
-        border: '1.5px solid var(--theme-border)',
-        'border-radius': props.isLeft ? '12px 0 0 12px' : props.isRight ? '0 12px 12px 0' : '12px',
-        padding: '10px',
+        background: 'rgba(32, 34, 37, 0.6)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        'border-radius': '4px',
+        padding: '6px',
         cursor: 'pointer',
         transition: 'background 0.15s',
         display: 'flex',
         'align-items': 'center',
         'justify-content': 'center',
         'box-shadow': 'none',
-        'border-right': props.isLeft ? 'none' : undefined,
-        'border-left': props.isRight ? 'none' : undefined,
       }}
       class="discord-action-icon-btn"
       onClick={props.onClick}
@@ -118,17 +116,17 @@ export default function DiscordVideoActionButtons(props: Props) {
       }}
     >
       {props.mode === 'equal' ? (
-        <IconButton title="화면용 영상만 보기" onClick={props.onToggleLayout} isLeft>
+        <IconButton title="화면용 영상만 보기" onClick={props.onToggleLayout}>
           <MainOnlyIcon />
         </IconButton>
       ) : (
-        <IconButton title="기본보기" onClick={props.onToggleLayout} isLeft>
+        <IconButton title="기본보기" onClick={props.onToggleLayout}>
           <EqualIcon />
         </IconButton>
       )}
-      <IconButton title="전체화면" onClick={props.onFullscreen} isRight>
+      {/* <IconButton title="전체화면" onClick={props.onFullscreen} isRight>
         <FullscreenIcon />
-      </IconButton>
+      </IconButton> */}
     </div>
   );
 }
