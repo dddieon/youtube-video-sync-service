@@ -445,6 +445,7 @@ body {
   flex: 1;
   min-height: 0;
   position: relative;
+  max-height: 315px;
 }
 
 .main-video-block {
@@ -747,7 +748,7 @@ input[type='number'] {
 .video-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 비율 */
+  /* padding-top: 56.25%;  */
 }
 
 .youtube-player {
@@ -914,6 +915,7 @@ input[type='number'] {
 
   .main-video-area {
     flex-direction: column;
+    max-height: 500px;
   }
 
   .main-video-block,
