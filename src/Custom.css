@@ -445,7 +445,7 @@ body {
   flex: 1;
   min-height: 0;
   position: relative;
-  max-height: 315px;
+  max-height: 500px;
 }
 
 .main-video-block {
@@ -915,7 +915,6 @@ input[type='number'] {
 
   .main-video-area {
     flex-direction: column;
-    max-height: 500px;
   }
 
   .main-video-block,
