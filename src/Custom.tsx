@@ -199,20 +199,22 @@ function YoutubePlayer() {
     createOrUpdatePlayer2(videoId);
   }
 
-  // 현재 재생 중인 영상들의 싱크를 다시 맞추는 함수 (첨부 코드)
+  // 현재 재생 중인 영상들의 싱크를 다시 맞추는 함수
   const resyncPlayers = () => {
     const player1Instance = player1();
     const player2Instance = player2();
     if (!player1Instance || !player2Instance) return;
+
     const gap = timeGap();
     const currentTime = player1Instance.getCurrentTime();
-    const targetTime = currentTime + gap;
+    const targetTime = currentTime - gap;
+
     player2Instance.pauseVideo();
+
     if (targetTime < 0) {
       player2Instance.seekTo(0);
       setTimeout(
         () => {
-          player1Instance.seekTo(Math.abs(targetTime));
           player2Instance.playVideo();
         },
         Math.abs(targetTime) * 1000,
@@ -221,7 +223,18 @@ function YoutubePlayer() {
       player2Instance.seekTo(targetTime);
       player2Instance.playVideo();
     }
+
+    console.log('[SYNC] resyncPlayers: 소리용 영상 시간 조정', {
+      gap,
+      currentTime,
+      targetTime,
+    });
   };
+
+  // 시간 간격 변경 시 싱크 맞추기
+  function syncTimeGap() {
+    resyncPlayers();
+  }
 
   let syncTimeout: ReturnType<typeof setTimeout> | null = null;
   let allowSoundPlay = false;
@@ -258,19 +271,23 @@ function YoutubePlayer() {
 
     if (event.data === window.YT!.PlayerState.PLAYING) {
       player1Instance.playVideo();
-
       player2Instance.pauseVideo();
 
-      // "처음 재생(0초)"일 때만 gap만큼 대기, 그 외에는 바로 싱크
-      if (currentTime < 0.1 && gap > 0) {
+      // 화면용 영상의 현재 시간을 기준으로 소리용 영상 시간 계산
+      if (targetTime < 0) {
         player2Instance.seekTo(0);
-        console.log(`[SYNC] gap > 0 & 처음 재생: 소리용 영상 0초에서 ${gap}초 대기 후 재생`);
-        syncTimeout = setTimeout(() => {
-          console.log('[SYNC] 소리용 영상 playVideo() 실행');
-          allowSoundPlay = true;
-          player2Instance.playVideo();
-          syncTimeout = null;
-        }, gap * 1000);
+        console.log(
+          `[SYNC] targetTime < 0: 소리용 영상 0초에서 ${Math.abs(targetTime)}초 대기 후 재생`,
+        );
+        syncTimeout = setTimeout(
+          () => {
+            console.log('[SYNC] 소리용 영상 playVideo() 실행');
+            allowSoundPlay = true;
+            player2Instance.playVideo();
+            syncTimeout = null;
+          },
+          Math.abs(targetTime) * 1000,
+        );
       } else {
         allowSoundPlay = true;
         player2Instance.seekTo(targetTime);
@@ -437,24 +454,6 @@ function YoutubePlayer() {
     } else if (el && (el as any).webkitRequestFullscreen) {
       (el as any).webkitRequestFullscreen();
     }
-  }
-
-  function syncTimeGap() {
-    const player1Instance = player1();
-    const player2Instance = player2();
-    if (!player1Instance || !player2Instance) return;
-
-    const gap = timeGap();
-    const currentTime = player1Instance.getCurrentTime();
-    const targetTime = currentTime - gap;
-    allowSoundPlay = true;
-    player2Instance.seekTo(targetTime);
-    player2Instance.playVideo();
-    console.log('[SYNC] timeGap 변경: 소리용 영상 targetTime에서 바로 재생', {
-      gap,
-      currentTime,
-      targetTime,
-    });
   }
 
   createEffect(() => {
